@@ -1,53 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* AntiGravity Design System - Futuristic Dark Theme */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
     /* Core dark theme */
     --background: 220 20% 6%;
     --foreground: 0 0% 98%;
-    
+
     /* Cards with glass effect */
     --card: 220 20% 10%;
     --card-foreground: 0 0% 98%;
-    
+
     --popover: 220 20% 8%;
     --popover-foreground: 0 0% 98%;
-    
+
     /* Neon green primary */
     --primary: 142 76% 50%;
     --primary-foreground: 220 20% 6%;
-    
+
     /* Muted surfaces */
     --secondary: 220 15% 15%;
     --secondary-foreground: 0 0% 90%;
-    
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 60%;
-    
+
+    --muted: 220 15% 22%;
+    --muted-foreground: 220 10% 75%;
+
     /* Cyan accent */
     --accent: 185 100% 50%;
     --accent-foreground: 220 20% 6%;
-    
+
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    
+
     --border: 220 15% 20%;
     --input: 220 15% 15%;
     --ring: 142 76% 50%;
-    
+
     --radius: 0.75rem;
-    
+
     /* Custom AntiGravity tokens */
     --neon-glow: 142 76% 50%;
     --neon-cyan: 185 100% 50%;
     --neon-purple: 270 80% 60%;
     --surface-glass: 220 20% 12%;
-    
+
     /* Sidebar */
     --sidebar-background: 220 20% 8%;
     --sidebar-foreground: 0 0% 90%;
@@ -70,8 +71,8 @@
     --primary-foreground: 220 20% 6%;
     --secondary: 220 15% 12%;
     --secondary-foreground: 0 0% 90%;
-    --muted: 220 15% 15%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 70%;
     --accent: 185 100% 50%;
     --accent-foreground: 220 20% 6%;
     --destructive: 0 72% 51%;
@@ -86,77 +87,83 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
   }
 }
 
 @layer utilities {
+
   /* Neon glow effects */
   .neon-glow {
-    box-shadow: 
+    box-shadow:
       0 0 5px hsl(var(--neon-glow) / 0.5),
       0 0 20px hsl(var(--neon-glow) / 0.3),
       0 0 40px hsl(var(--neon-glow) / 0.1);
   }
-  
+
   .neon-glow-cyan {
-    box-shadow: 
-      0 0 5px hsl(var(--neon-cyan) / 0.5),
-      0 0 20px hsl(var(--neon-cyan) / 0.3),
-      0 0 40px hsl(var(--neon-cyan) / 0.1);
+    box-shadow:
+      0 0 5px hsl(var(--neon-cyan) / 0.7),
+      0 0 20px hsl(var(--neon-cyan) / 0.4),
+      0 0 40px hsl(var(--neon-cyan) / 0.2);
   }
-  
+
   .neon-text {
-    text-shadow: 
+    text-shadow:
       0 0 10px hsl(var(--neon-glow) / 0.8),
       0 0 30px hsl(var(--neon-glow) / 0.5);
   }
-  
+
   .neon-text-cyan {
-    text-shadow: 
+    text-shadow:
       0 0 10px hsl(var(--neon-cyan) / 0.8),
       0 0 30px hsl(var(--neon-cyan) / 0.5);
   }
-  
+
   /* Glass morphism */
   .glass {
     background: hsl(var(--surface-glass) / 0.8);
     backdrop-filter: blur(20px);
     border: 1px solid hsl(var(--border) / 0.5);
   }
-  
+
   .glass-strong {
     background: hsl(var(--surface-glass) / 0.95);
     backdrop-filter: blur(30px);
     border: 1px solid hsl(var(--border) / 0.7);
   }
-  
+
   /* Gradient backgrounds */
   .bg-gradient-radial {
     background: radial-gradient(ellipse at top, hsl(var(--primary) / 0.1) 0%, transparent 50%);
   }
-  
+
   .bg-gradient-mesh {
-    background: 
+    background:
       radial-gradient(at 20% 20%, hsl(var(--primary) / 0.15) 0%, transparent 50%),
       radial-gradient(at 80% 80%, hsl(var(--neon-cyan) / 0.1) 0%, transparent 50%),
       radial-gradient(at 50% 50%, hsl(var(--neon-purple) / 0.05) 0%, transparent 50%);
   }
-  
+
   /* Animated gradient border */
   .gradient-border {
     position: relative;
     background: hsl(var(--card));
     border-radius: var(--radius);
   }
-  
+
   .gradient-border::before {
     content: '';
     position: absolute;
@@ -166,46 +173,50 @@
     z-index: -1;
     opacity: 0.5;
   }
-  
+
   /* Map overlay gradient */
   .map-overlay-gradient {
-    background: linear-gradient(
-      to bottom,
-      hsl(var(--background) / 0.95) 0%,
-      hsl(var(--background) / 0.7) 30%,
-      transparent 100%
-    );
+    background: linear-gradient(to bottom,
+        hsl(var(--background) / 0.95) 0%,
+        hsl(var(--background) / 0.7) 30%,
+        transparent 100%);
   }
-  
+
   /* Pulse animation for online status */
   .pulse-online {
     animation: pulse-online 2s ease-in-out infinite;
   }
-  
+
   @keyframes pulse-online {
-    0%, 100% {
+
+    0%,
+    100% {
       box-shadow: 0 0 0 0 hsl(var(--primary) / 0.7);
     }
+
     50% {
       box-shadow: 0 0 0 10px hsl(var(--primary) / 0);
     }
   }
-  
+
   /* Shimmer loading effect */
   .shimmer {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--muted)) 0%,
-      hsl(var(--muted-foreground) / 0.1) 50%,
-      hsl(var(--muted)) 100%
-    );
+    background: linear-gradient(90deg,
+        hsl(var(--muted)) 0%,
+        hsl(var(--muted-foreground) / 0.1) 50%,
+        hsl(var(--muted)) 100%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
-  
+
   @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+
+    100% {
+      background-position: -200% 0;
+    }
   }
 }
 

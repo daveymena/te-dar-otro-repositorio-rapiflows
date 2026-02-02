@@ -1,73 +1,79 @@
-# Welcome to your Lovable project
+# AntiGravity - Plataforma Avanzada de Transporte
 
-## Project info
+AntiGravity es una aplicación de transporte de próxima generación diseñada para ofrecer una experiencia justa, transparente y eficiente tanto para pasajeros como para conductores. A diferencia de las plataformas tradicionales, AntiGravity empodera a los usuarios con negociación de precios en tiempo real y selección directa de conductores.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 Características Clave
 
-## How can I edit this code?
+*   **Negociación en Tiempo Real**: Los pasajeros proponen un precio; los conductores pueden aceptar o contraofertar.
+*   **Selección de Conductor**: Los pasajeros eligen a su conductor basándose en la calificación, el vehículo y el tiempo de llegada (ETA).
+*   **Mapas Interactivos**: Seguimiento en vivo de conductores y progreso del viaje usando Mapbox.
+*   **Ciclo Completo del Viaje**: Desde la solicitud hasta la finalización, incluyendo actualizaciones de estado y calificación.
+*   **Seguro y Verificado**: Verificación integrada para conductores (Licencia, Seguro) y seguimiento seguro del viaje.
 
-There are several ways of editing your application.
+## 🛠 Tecnologías
 
-**Use Lovable**
+*   **Frontend**: React, Vite, TypeScript, Tailwind CSS, Framer Motion
+*   **Backend**: Supabase (PostgreSQL, Realtime, Auth, Storage)
+*   **Mapas**: Mapbox GL JS
+*   **Componentes UI**: shadcn/ui, Lucide Icons
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## 🏁 Primeros Pasos
 
-Changes made via Lovable will be committed automatically to this repo.
+### Requisitos Previos
 
-**Use your preferred IDE**
+*   Node.js (v18 o superior)
+*   npm
+*   Un proyecto de Supabase
+*   Un token público de Mapbox
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Instalación
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1.  **Clonar el repositorio**
+    ```bash
+    git clone https://github.com/daveymena/gravity-drive.git
+    cd gravity-drive
+    ```
 
-Follow these steps:
+2.  **Instalar Dependencias**
+    ```bash
+    npm install
+    ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3.  **Configuración del Entorno**
+    Crea un archivo `.env` en el directorio raíz:
+    ```env
+    VITE_SUPABASE_URL=tu_url_de_supabase
+    VITE_SUPABASE_PUBLISHABLE_KEY=tu_clave_de_supabase
+    VITE_MAPBOX_TOKEN=tu_token_de_mapbox
+    ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4.  **Configuración de la Base de Datos**
+    Ejecuta el SQL de migración proporcionado en `supabase/migrations/` en tu Editor SQL de Supabase para configurar las tablas de Viajes, Ofertas, Documentos y Pagos.
 
-# Step 3: Install the necessary dependencies.
-npm i
+5.  **Ejecutar Localmente**
+    ```bash
+    npm run dev
+    ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## 📱 Flujo de la Aplicación
 
-**Edit a file directly in GitHub**
+### Para Pasajeros
+1.  **Solicitar**: Ingresa el destino y ofrece un precio.
+2.  **Negociar**: Recibe ofertas de conductores cercanos.
+3.  **Seleccionar**: Elige un conductor basado en precio/calificación.
+4.  **Rastrear**: Observa la llegada del conductor y sigue el viaje.
+5.  **Pagar y Calificar**: Completa el viaje y califica el servicio.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Para Conductores
+1.  **Conectarse**: Cambia el estado a "En Línea" para recibir solicitudes.
+2.  **Ofertar**: Acepta ofertas o propón tarifas más altas.
+3.  **Conducir**: Navega al punto de recogida y al destino.
+4.  **Ganar**: Revisa tus ganancias diarias y estadísticas.
 
-**Use GitHub Codespaces**
+## 🤝 Contribuir
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+¡Las contribuciones son bienvenidas! Siéntete libre de enviar un Pull Request.
 
-## What technologies are used for this project?
+## 📄 Licencia
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Este proyecto está bajo la Licencia MIT.

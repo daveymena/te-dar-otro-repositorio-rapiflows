@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Car, 
-  MapPin, 
-  DollarSign, 
+import {
+  Car,
+  MapPin,
+  DollarSign,
   Star,
   Menu,
   User,
@@ -14,7 +14,7 @@ import {
   X,
   TrendingUp,
   CheckCircle,
-  XCircle
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,24 +24,66 @@ import { useRideStore } from '@/store/rideStore';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import type { Ride, Profile } from '@/lib/supabase';
+import { useNavigate, Navigate } from 'react-router-dom';
+import type { Ride } from '@/lib/supabase';
+import MapComponent from '@/components/Map';
+import { ChatPanel } from '@/components/ChatPanel';
+import { EmergencyButton } from '@/components/EmergencyButton';
+import { ETAIndicator } from '@/components/ETAIndicator';
+import { useDriverTracking } from '@/hooks/useDriverTracking';
+import { useRouteTracking } from '@/services/routingService';
 
 export function DriverDashboard() {
-  const { profile, isAuthenticated } = useAuth();
+  const { profile, isAuthenticated, isLoading } = useAuth();
   const { signOut } = useAuthStore();
   const { latitude, longitude } = useGeolocation({ watch: true });
   const { availableRides, setAvailableRides, addAvailableRide, removeAvailableRide, updateAvailableRide } = useRideStore();
-  
+
   const [isOnline, setIsOnline] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [counterOffer, setCounterOffer] = useState<number>(0);
   const [todayEarnings, setTodayEarnings] = useState(0);
   const [todayRides, setTodayRides] = useState(0);
-  
+  const [activeRide, setActiveRide] = useState<Ride | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [riderName, setRiderName] = useState('Pasajero');
+
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // GPS Tracking for driver
+  const { position: driverPosition, isTracking } = useDriverTracking({
+    enabled: isOnline && !!profile,
+    updateInterval: 5000,
+    onLocationUpdate: async (pos) => {
+      // Update driver location in database
+      if (profile) {
+        await supabase
+          .from('profiles')
+          .update({
+            current_lat: pos.latitude,
+            current_lng: pos.longitude,
+            last_location_update: new Date().toISOString(),
+          })
+          .eq('id', profile.id);
+      }
+    },
+  });
+
+  // Route tracking for active ride
+  const origin = activeRide && driverPosition
+    ? { lat: driverPosition.latitude, lng: driverPosition.longitude }
+    : null;
+  const destination = activeRide
+    ? { lat: activeRide.destination_lat, lng: activeRide.destination_lng }
+    : null;
+
+  const { route, eta, formattedDistance, formattedEta } = useRouteTracking(
+    origin,
+    destination,
+    origin
+  );
 
   // Update driver location and online status
   useEffect(() => {
@@ -73,13 +115,29 @@ export function DriverDashboard() {
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
         .limit(20);
-      
+
       if (data) {
         setAvailableRides(data as Ride[]);
       }
     };
 
     fetchRides();
+
+    // Check for active ride
+    const checkActiveRide = async () => {
+      if (!profile) return;
+      const { data } = await supabase
+        .from('rides')
+        .select('*')
+        .eq('driver_id', profile.id)
+        .in('status', ['accepted', 'ongoing', 'driver_arriving'])
+        .single();
+
+      if (data) {
+        setActiveRide(data as Ride);
+      }
+    };
+    checkActiveRide();
 
     // Subscribe to new rides
     const channel = supabase
@@ -95,7 +153,7 @@ export function DriverDashboard() {
         (payload) => {
           const newRide = payload.new as Ride;
           addAvailableRide(newRide);
-          
+
           toast({
             title: '¡Nueva solicitud!',
             description: `Oferta de $${newRide.offer_price}`,
@@ -111,7 +169,7 @@ export function DriverDashboard() {
         },
         (payload) => {
           const updatedRide = payload.new as Ride;
-          
+
           if (updatedRide.status === 'cancelled' || updatedRide.status === 'accepted') {
             removeAvailableRide(updatedRide.id);
           } else {
@@ -139,18 +197,17 @@ export function DriverDashboard() {
           accepted_at: new Date().toISOString(),
         })
         .eq('id', ride.id)
-        .eq('status', 'pending'); // Ensure ride hasn't been taken
+        .eq('status', 'pending');
 
       if (error) throw error;
 
       removeAvailableRide(ride.id);
       setSelectedRide(null);
-      setTodayRides((prev) => prev + 1);
-      setTodayEarnings((prev) => prev + ride.offer_price);
+      setActiveRide({ ...ride, status: 'accepted', driver_id: profile.id, final_price: ride.offer_price });
 
       toast({
         title: '¡Viaje aceptado!',
-        description: `Ganancia: $${ride.offer_price}`,
+        description: 'Dirígete a recoger al pasajero',
       });
     } catch (error: any) {
       toast({
@@ -160,6 +217,32 @@ export function DriverDashboard() {
       });
     }
   }, [profile, removeAvailableRide, toast]);
+
+  const updateRideStatus = async (status: 'driver_arriving' | 'ongoing' | 'completed') => {
+    if (!activeRide) return;
+
+    const updates: any = { status };
+    if (status === 'completed') {
+      updates.completed_at = new Date().toISOString();
+      setTodayRides(prev => prev + 1);
+      setTodayEarnings(prev => prev + (activeRide.final_price || activeRide.offer_price));
+    }
+
+    const { error } = await supabase
+      .from('rides')
+      .update(updates)
+      .eq('id', activeRide.id);
+
+    if (error) {
+      toast({ title: 'Error', description: 'No se pudo actualizar el estado', variant: 'destructive' });
+    } else {
+      setActiveRide(prev => prev ? { ...prev, status } : null);
+      if (status === 'completed') {
+        setActiveRide(null);
+        toast({ title: 'Viaje Completado', description: '¡Buen trabajo!' });
+      }
+    }
+  };
 
   const handleCounterOffer = useCallback(async (ride: Ride) => {
     if (!profile || counterOffer <= 0) return;
@@ -203,9 +286,108 @@ export function DriverDashboard() {
     navigate('/');
   };
 
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-background text-primary">
+        <div className="w-8 h-8 border-4 border-current border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
-    navigate('/auth');
-    return null;
+    return <Navigate to="/auth" />;
+  }
+
+  if (profile?.role !== 'driver') {
+    return <Navigate to="/rider" />;
+  }
+
+  // Handle unverified drivers
+  if (profile?.verification_status === 'unverified' || profile?.verification_status === 'pending') {
+    const [uploading, setUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
+
+    const handleUpload = async () => {
+      setUploading(true);
+      // Simulate multiple document uploads
+      for (let i = 0; i <= 100; i += 10) {
+        setProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ verification_status: 'pending' })
+        .eq('id', profile.id);
+
+      if (!error) {
+        toast({
+          title: "Documentos recibidos",
+          description: "Tu información está en revisión. Te avisaremos pronto.",
+        });
+        useAuthStore.getState().fetchProfile();
+      }
+      setUploading(false);
+    };
+
+    return (
+      <div className="h-screen bg-background flex flex-col items-center justify-center p-6 text-center bg-gradient-mesh">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-strong p-8 rounded-3xl max-w-md w-full border border-primary/20"
+        >
+          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6 mx-auto">
+            {profile?.verification_status === 'unverified' ? (
+              <Shield className="w-12 h-12 text-primary neon-text" />
+            ) : (
+              <Clock className="w-12 h-12 text-accent animate-pulse" />
+            )}
+          </div>
+          <h2 className="text-3xl font-display font-bold mb-4">Verificación de Conductor</h2>
+          <p className="text-foreground/80 mb-8">
+            {profile?.verification_status === 'unverified'
+              ? 'Bienvenido a AntiGravity. Para comenzar a generar ingresos, necesitamos verificar tu licencia de conducir y propiedad del vehículo.'
+              : '¡Todo listo por ahora! Tus documentos están siendo revisados por nuestro equipo de seguridad.'}
+          </p>
+
+          {profile?.verification_status === 'unverified' ? (
+            <div className="space-y-4">
+              {uploading ? (
+                <div className="space-y-2">
+                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-primary"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-primary font-medium">Subiendo documentos... {progress}%</p>
+                </div>
+              ) : (
+                <Button variant="neon" size="xl" className="w-full" onClick={handleUpload}>
+                  Subir Documentos Ahora
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 flex items-center gap-3 text-accent transition-all">
+              <CheckCircle className="w-6 h-6" />
+              <span className="font-semibold">Revisión en curso (24-48h)</span>
+            </div>
+          )}
+
+          <Button
+            variant="ghost"
+            className="mt-8 text-muted-foreground hover:text-destructive transition-colors"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            Cerrar Sesión para Passenger Dashboard
+          </Button>
+        </motion.div>
+      </div>
+    );
   }
 
   return (
@@ -268,15 +450,18 @@ export function DriverDashboard() {
                   <Clock className="w-5 h-5" />
                   Historial
                 </button>
-                <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary text-muted-foreground">
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary text-muted-foreground text-left"
+                >
                   <User className="w-5 h-5" />
                   Mi Perfil
                 </button>
               </nav>
 
               <div className="absolute bottom-6 left-6 right-6">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="w-full justify-start text-destructive"
                   onClick={handleLogout}
                 >
@@ -290,54 +475,53 @@ export function DriverDashboard() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b border-border bg-card/50 backdrop-blur-xl">
-        <button 
+      <header className="flex items-center justify-between p-4 border-b border-border bg-card/80 backdrop-blur-xl z-30 sticky top-0">
+        <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 hover:bg-secondary rounded-lg"
+          className="p-2 hover:bg-secondary rounded-xl transition-colors"
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-6 h-6 text-foreground" />
         </button>
-        
+
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Car className="w-5 h-5 text-primary-foreground" />
+          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
+            <Car className="w-6 h-6 text-primary neon-text" />
           </div>
-          <span className="font-display font-bold">Conductor</span>
+          <span className="font-display font-bold text-lg tracking-tight">Driver Hub</span>
         </div>
 
         {/* Online Toggle */}
         <button
           onClick={() => setIsOnline(!isOnline)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-            isOnline 
-              ? 'bg-primary text-primary-foreground neon-glow' 
-              : 'bg-secondary text-muted-foreground'
-          }`}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-500 shadow-lg ${isOnline
+            ? 'bg-primary text-primary-foreground neon-glow font-bold'
+            : 'bg-secondary text-muted-foreground border border-border'
+            }`}
         >
-          <Power className="w-4 h-4" />
-          <span className="text-sm font-medium">
-            {isOnline ? 'En Línea' : 'Desconectado'}
+          <Power className={`w-4 h-4 ${isOnline ? 'animate-pulse' : ''}`} />
+          <span className="text-sm">
+            {isOnline ? 'EN LÍNEA' : 'DESCONECTADO'}
           </span>
         </button>
       </header>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-2 gap-4 p-4 bg-card/50">
-        <div className="glass rounded-xl p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <DollarSign className="w-4 h-4" />
-            <span className="text-sm">Ganancias Hoy</span>
+      <div className="grid grid-cols-2 gap-4 p-4 bg-background/50 backdrop-blur-md">
+        <div className="glass-strong rounded-2xl p-5 border-l-4 border-primary shadow-xl">
+          <div className="flex items-center gap-2 text-foreground/70 mb-2">
+            <DollarSign className="w-4 h-4 text-primary" />
+            <span className="text-xs font-bold uppercase tracking-wider">Hoy</span>
           </div>
-          <div className="text-2xl font-display font-bold text-primary">
+          <div className="text-3xl font-display font-bold text-primary neon-text">
             ${todayEarnings}
           </div>
         </div>
-        <div className="glass rounded-xl p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Navigation className="w-4 h-4" />
-            <span className="text-sm">Viajes Hoy</span>
+        <div className="glass-strong rounded-2xl p-5 border-l-4 border-accent shadow-xl">
+          <div className="flex items-center gap-2 text-foreground/70 mb-2">
+            <Navigation className="w-4 h-4 text-accent" />
+            <span className="text-xs font-bold uppercase tracking-wider">Viajes</span>
           </div>
-          <div className="text-2xl font-display font-bold">
+          <div className="text-3xl font-display font-bold text-accent">
             {todayRides}
           </div>
         </div>
@@ -345,9 +529,103 @@ export function DriverDashboard() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        {!isOnline ? (
-          <div className="h-full flex items-center justify-center p-6">
-            <div className="text-center">
+        {activeRide ? (
+          <div className="h-full flex flex-col p-4 space-y-4 overflow-y-auto">
+            <div className="flex-1 min-h-[300px] rounded-2xl overflow-hidden glass border border-border">
+              <MapComponent
+                origin={{ lat: activeRide.origin_lat, lng: activeRide.origin_lng, address: activeRide.origin_address || '' }}
+                destination={{ lat: activeRide.destination_lat, lng: activeRide.destination_lng, address: activeRide.destination_address || '' }}
+              />
+            </div>
+
+
+            <div className="glass-strong p-6 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-display font-bold">Viaje en curso</h3>
+                  <p className="text-sm text-muted-foreground">Estado: {
+                    activeRide.status === 'accepted' ? 'Yendo a recoger' :
+                      activeRide.status === 'driver_arriving' ? 'En el origen' :
+                        'En camino al destino'
+                  }</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-display font-bold text-primary">${activeRide.final_price || activeRide.offer_price}</div>
+                  <div className="text-xs text-muted-foreground">Pago en efectivo</div>
+                </div>
+              </div>
+
+              {/* ETA Indicator */}
+              {eta && (
+                <ETAIndicator
+                  eta={eta}
+                  distance={formattedDistance}
+                  status={activeRide.status === 'ongoing' ? 'ongoing' : 'arriving'}
+                />
+              )}
+
+              {/* GPS Tracking Status */}
+              {isTracking && (
+                <div className="flex items-center gap-2 py-2 px-3 bg-primary/10 rounded-xl">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  <span className="text-xs text-primary font-medium">GPS Activo</span>
+                </div>
+              )}
+
+              <div className="space-y-3 py-4 border-y border-border">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 mt-1.5 bg-primary rounded-full" />
+                  <div className="text-sm font-medium">{activeRide.origin_address}</div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 mt-1.5 bg-accent rounded-full" />
+                  <div className="text-sm font-medium">{activeRide.destination_address}</div>
+                </div>
+              </div>
+
+              {/* Communication Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-primary/50 hover:bg-primary/10"
+                  onClick={() => setIsChatOpen(true)}
+                >
+                  💬 Mensaje
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-primary/50 hover:bg-primary/10"
+                  onClick={() => toast({ title: 'Llamando...', description: 'Función en desarrollo' })}
+                >
+                  📞 Llamar
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {activeRide.status === 'accepted' && (
+                  <Button variant="neon" size="lg" className="w-full rounded-xl" onClick={() => updateRideStatus('driver_arriving')}>
+                    ✅ He llegado al origen
+                  </Button>
+                )}
+                {activeRide.status === 'driver_arriving' && (
+                  <Button variant="neon" size="lg" className="w-full rounded-xl" onClick={() => updateRideStatus('ongoing')}>
+                    🚗 Iniciar viaje
+                  </Button>
+                )}
+                {activeRide.status === 'ongoing' && (
+                  <Button variant="neon" size="lg" className="w-full rounded-xl" onClick={() => updateRideStatus('completed')}>
+                    🏁 Completar viaje
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : !isOnline ? (
+          <div className="h-full flex items-center justify-center p-6 relative">
+            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+              <MapComponent />
+            </div>
+            <div className="text-center z-10 glass p-8 rounded-2xl">
               <div className="w-24 h-24 mx-auto bg-secondary rounded-full flex items-center justify-center mb-6">
                 <Power className="w-12 h-12 text-muted-foreground" />
               </div>
@@ -355,8 +633,8 @@ export function DriverDashboard() {
               <p className="text-muted-foreground mb-6">
                 Activa el modo en línea para recibir solicitudes de viaje
               </p>
-              <Button 
-                variant="neon" 
+              <Button
+                variant="neon"
                 size="lg"
                 onClick={() => setIsOnline(true)}
               >
@@ -374,8 +652,8 @@ export function DriverDashboard() {
             </div>
 
             {availableRides.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center p-6">
-                <div className="text-center">
+              <div className="flex-1 flex items-center justify-center p-6 text-center">
+                <div>
                   <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4 animate-pulse">
                     <Navigation className="w-8 h-8 text-primary" />
                   </div>
@@ -393,7 +671,7 @@ export function DriverDashboard() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -100 }}
-                    className="glass-strong rounded-xl p-4"
+                    className="glass-strong rounded-xl p-4 cursor-pointer"
                     onClick={() => {
                       setSelectedRide(ride);
                       setCounterOffer(Math.round(ride.offer_price * 1.2));
@@ -421,9 +699,9 @@ export function DriverDashboard() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button 
-                        variant="neon" 
-                        size="sm" 
+                      <Button
+                        variant="neon"
+                        size="sm"
                         className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -433,9 +711,9 @@ export function DriverDashboard() {
                         <CheckCircle className="w-4 h-4" />
                         Aceptar
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -511,15 +789,15 @@ export function DriverDashboard() {
               </div>
 
               <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
                   onClick={() => setSelectedRide(null)}
                 >
                   Cancelar
                 </Button>
-                <Button 
-                  variant="neon" 
+                <Button
+                  variant="neon"
                   className="flex-1"
                   onClick={() => handleCounterOffer(selectedRide)}
                 >
@@ -530,6 +808,28 @@ export function DriverDashboard() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Floating Components */}
+      {activeRide && profile && driverPosition && (
+        <>
+          <EmergencyButton
+            rideId={activeRide.id}
+            userId={profile.id}
+            currentLocation={{
+              lat: driverPosition.latitude,
+              lng: driverPosition.longitude,
+            }}
+          />
+
+          <ChatPanel
+            rideId={activeRide.id}
+            currentUserId={profile.id}
+            otherUserName={riderName}
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+          />
+        </>
+      )}
     </div>
   );
 }

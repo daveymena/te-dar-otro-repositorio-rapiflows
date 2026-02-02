@@ -9,27 +9,29 @@ export function useAuth() {
     // Set up auth state listener BEFORE checking session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        setLoading(true);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
-          // Use setTimeout to avoid potential race conditions
-          setTimeout(() => {
-            fetchProfile();
-          }, 0);
+          await useAuthStore.getState().fetchProfile();
         } else {
           useAuthStore.getState().setProfile(null);
         }
-        
+
         setLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Session check:', !!session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile();
+        await useAuthStore.getState().fetchProfile();
       }
+      setLoading(false);
+    }).catch(err => {
+      console.error('Session check failed:', err);
       setLoading(false);
     });
 

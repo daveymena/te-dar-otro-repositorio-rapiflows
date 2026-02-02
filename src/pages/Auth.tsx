@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Car, Mail, Lock, User, Eye, EyeOff, ArrowLeft, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +20,7 @@ export function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole>('rider');
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -31,13 +30,26 @@ export function Auth() {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated, profile } = useAuth();
+  const { isAuthenticated, profile, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated && profile) {
-      navigate(profile.role === 'driver' ? '/driver' : '/rider');
+    console.log('Auth State check:', { isAuthLoading, isAuthenticated, profileRole: profile?.role });
+
+    if (!isAuthLoading && isAuthenticated) {
+      if (profile) {
+        const dest = profile.role === 'driver' ? '/driver' : '/rider';
+        console.log('Redirecting to:', dest);
+        navigate(dest, { replace: true });
+      } else {
+        console.log('User authenticated but profile still missing.');
+        toast({
+          title: "Perfil en proceso",
+          description: "Estamos preparando tu dashboard. Si esto tarda más de 5 segundos, por favor refresca la página.",
+          variant: "default"
+        });
+      }
     }
-  }, [isAuthenticated, profile, navigate]);
+  }, [isAuthenticated, profile, navigate, isAuthLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,9 +102,16 @@ export function Auth() {
         });
       }
     } catch (error: any) {
+      console.error('Auth action error:', error);
+      let message = error.message || 'Algo salió mal. Intenta de nuevo.';
+
+      if (message.includes('User already registered') || message.includes('already exists')) {
+        message = 'Este correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña.';
+      }
+
       toast({
         title: 'Error',
-        description: error.message || 'Algo salió mal. Intenta de nuevo.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -104,10 +123,8 @@ export function Auth() {
     <div className="min-h-screen bg-background flex">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
-        <motion.div 
+        <div
           className="w-full max-w-md"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
         >
           {/* Back to home */}
           <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">
@@ -126,25 +143,35 @@ export function Auth() {
           </div>
 
           {/* Title */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <h1 className="text-3xl font-display font-bold mb-2">
-                {mode === 'login' && 'Bienvenido de vuelta'}
-                {mode === 'signup' && 'Crea tu cuenta'}
-                {mode === 'forgot' && 'Recupera tu contraseña'}
-              </h1>
-              <p className="text-muted-foreground mb-8">
-                {mode === 'login' && 'Ingresa tus credenciales para continuar'}
-                {mode === 'signup' && 'Únete a la revolución del transporte'}
-                {mode === 'forgot' && 'Te enviaremos un enlace para restablecerla'}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+          <div>
+            <h1 className="text-3xl font-display font-bold mb-2">
+              {mode === 'login' ? 'Bienvenido de vuelta' : mode === 'signup' ? 'Crea tu cuenta' : 'Recupera tu contraseña'}
+            </h1>
+            <p className="text-muted-foreground mb-8">
+              {mode === 'login' ? 'Ingresa tus credenciales para continuar' : mode === 'signup' ? 'Únete a la revolución del transporte' : 'Te enviaremos un enlace para restablecerla'}
+            </p>
+          </div>
+
+          {/* Fallback Entry Button if stuck */}
+          {isAuthenticated && (
+            <div className="mb-8 p-6 bg-primary/10 border border-primary rounded-2xl animate-in fade-in slide-in-from-top-4">
+              <h3 className="text-lg font-bold text-primary mb-2">¡Sesión Detectada!</h3>
+              <p className="text-sm text-muted-foreground mb-4">Ya has iniciado sesión correctamente.</p>
+              <Button
+                onClick={() => navigate(profile?.role === 'driver' ? '/driver' : '/rider')}
+                variant="neon"
+                className="w-full h-12"
+              >
+                Entrar al Dashboard Ahora
+              </Button>
+              <button
+                onClick={() => useAuthStore.getState().signOut()}
+                className="w-full text-xs text-muted-foreground mt-4 hover:text-foreground underline"
+              >
+                O cerrar sesión para entrar con otra cuenta
+              </button>
+            </div>
+          )}
 
           {/* Role Selection for Signup */}
           {mode === 'signup' && (
@@ -156,11 +183,10 @@ export function Auth() {
                 <button
                   type="button"
                   onClick={() => setSelectedRole('rider')}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    selectedRole === 'rider'
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-muted-foreground'
-                  }`}
+                  className={`p-4 rounded-xl border-2 transition-all ${selectedRole === 'rider'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-muted-foreground'
+                    }`}
                 >
                   <User className={`w-6 h-6 mx-auto mb-2 ${selectedRole === 'rider' ? 'text-primary' : 'text-muted-foreground'}`} />
                   <div className={`font-medium ${selectedRole === 'rider' ? 'text-primary' : ''}`}>Pasajero</div>
@@ -169,11 +195,10 @@ export function Auth() {
                 <button
                   type="button"
                   onClick={() => setSelectedRole('driver')}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    selectedRole === 'driver'
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-muted-foreground'
-                  }`}
+                  className={`p-4 rounded-xl border-2 transition-all ${selectedRole === 'driver'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-muted-foreground'
+                    }`}
                 >
                   <Car className={`w-6 h-6 mx-auto mb-2 ${selectedRole === 'driver' ? 'text-primary' : 'text-muted-foreground'}`} />
                   <div className={`font-medium ${selectedRole === 'driver' ? 'text-primary' : ''}`}>Conductor</div>
@@ -274,10 +299,10 @@ export function Auth() {
               </div>
             )}
 
-            <Button 
-              type="submit" 
-              variant="neon" 
-              size="lg" 
+            <Button
+              type="submit"
+              variant="neon"
+              size="lg"
               className="w-full"
               disabled={isLoading}
             >
@@ -324,16 +349,13 @@ export function Auth() {
               </button>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Right side - Decorative */}
       <div className="hidden lg:flex flex-1 bg-gradient-mesh items-center justify-center p-12">
-        <motion.div
+        <div
           className="max-w-lg text-center"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
         >
           <div className="w-24 h-24 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-8 neon-glow animate-float">
             <Car className="w-12 h-12 text-primary-foreground" />
@@ -342,10 +364,10 @@ export function Auth() {
             La libertad de elegir tu precio
           </h2>
           <p className="text-muted-foreground text-lg">
-            Con AntiGravity, el poder está en tus manos. 
+            Con AntiGravity, el poder está en tus manos.
             Negocia directamente con conductores y obtén el mejor precio para tu viaje.
           </p>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
