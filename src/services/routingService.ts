@@ -57,18 +57,24 @@ export async function getOptimizedRoute(
 export async function searchPlaces(query: string, proximity?: Coordinates): Promise<any[]> {
     try {
         const proximityQuery = proximity ? `&proximity=${proximity.lng},${proximity.lat}` : '';
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5${proximityQuery}&language=es`;
+        // types=poi,address,neighborhood -> prioritizes Points of Interest (Malls, complexes, business)
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=8${proximityQuery}&types=poi,address,neighborhood,place,postcode&language=es`;
 
         const response = await fetch(url);
         const data = await response.json();
 
         if (data.features) {
-            return data.features.map((f: any) => ({
-                name: f.text,
-                address: f.place_name,
-                lat: f.center[1],
-                lng: f.center[0]
-            }));
+            return data.features.map((f: any) => {
+                // If it's a POI, the 'text' is usually the business name (e.g. "Mall Plaza")
+                // while 'place_name' is the full address.
+                return {
+                    name: f.text,
+                    address: f.place_name,
+                    lat: f.center[1],
+                    lng: f.center[0],
+                    type: f.place_type[0]
+                };
+            });
         }
 
         return [];
