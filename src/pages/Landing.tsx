@@ -1,6 +1,7 @@
 import { Car, Users, DollarSign, Shield, MapPin, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import heroBg from '@/assets/hero-bg.jpg';
 
 const features = [
@@ -33,224 +34,177 @@ const stats = [
   { value: '4.9★', label: 'Calificación' },
 ];
 
-const HERO_IMAGE_URL = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=2070";
+const HERO_IMAGE_URL = "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop";
 
 export function Landing() {
   return (
-    <div className="min-h-screen bg-background selection:bg-primary/30 overflow-x-hidden w-full relative">
+    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-primary/30 overflow-x-hidden w-full relative font-sans">
       {/* Hero Section */}
-      <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden layout-fix">
-        {/* Background Image - Forced visible with extreme contrast */}
-        <div className="absolute inset-0 z-[-1] overflow-hidden">
+      <section className="relative h-screen flex items-center overflow-hidden">
+        {/* Cinematic Background */}
+        <div className="absolute inset-0 z-0">
           <img
             src={HERO_IMAGE_URL}
-            alt="Hero Background"
-            className="w-full h-full object-cover object-center scale-105"
+            alt="Rapicarm Transport"
+            className="w-full h-full object-cover object-center"
             loading="eager"
           />
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-[1px]" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/60" />
+          {/* Multi-layer Gradient for Text Protection */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-black/20 z-10" />
         </div>
 
-        {/* Decorative Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-30" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl opacity-30" />
-        </div>
-
-        {/* Navigation */}
-        <nav className="absolute top-0 left-0 right-0 z-50 p-6">
-          <div className="container mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center overflow-hidden border border-primary/50">
-                <Car className="w-8 h-8 text-primary" />
+        {/* Navigation Wrapper */}
+        <nav className="absolute top-0 left-0 right-0 z-[100] p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                <Car className="w-6 h-6 text-black" />
               </div>
-              <span className="text-2xl font-display font-bold text-white drop-shadow-lg">
-                Rapi<span className="text-primary neon-text">carm</span>
+              <span className="text-2xl font-display font-bold tracking-tight text-white">
+                Rapi<span className="text-primary">carm</span>
               </span>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Link to="/auth">
-                <Button variant="outline" size="lg" className="border-white/20 text-white hover:bg-white/10 hover:text-white">
-                  Iniciar Sesión
-                </Button>
-              </Link>
+            <div className="hidden md:flex items-center gap-6">
+              <Link to="/auth" className="text-sm font-medium hover:text-primary transition-colors">Iniciar Sesión</Link>
               <Link to="/auth?mode=signup">
-                <Button variant="neon" size="lg">
-                  Registrarse
+                <Button variant="neon" size="default" className="rounded-full px-8">
+                  Únete Gratis
                 </Button>
               </Link>
             </div>
           </div>
         </nav>
 
-        {/* Hero Content */}
-        <div className="container mx-auto px-6 relative z-10 text-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8">
-              <span className="w-2 h-2 bg-primary rounded-full pulse-online" />
-              <span className="text-sm text-muted-foreground">
-                La revolución del transporte llegó
-              </span>
+        {/* Main Content */}
+        <div className="container max-w-7xl mx-auto px-6 relative z-20">
+          <div className="max-w-2xl">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                <span className="text-xs font-bold uppercase tracking-widest text-primary">Disponible Ahora</span>
+              </div>
+
+              <h1 className="text-5xl lg:text-7xl font-display font-black leading-[1.1] mb-6 drop-shadow-sm">
+                Transporte <span className="text-primary italic">Justo</span>,<br />
+                A Tu Manera.
+              </h1>
+
+              <p className="text-xl text-gray-300 mb-10 leading-relaxed max-w-lg">
+                La primera plataforma donde tú decides el precio. Sin algoritmos invisibles, solo personas conectando con personas.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/rider" className="flex-1 sm:flex-none">
+                  <Button size="xl" variant="neon" className="w-full sm:w-auto rounded-full group px-10">
+                    Pedir un Viaje
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link to="/driver" className="flex-1 sm:flex-none">
+                  <Button size="xl" variant="outline" className="w-full sm:w-auto rounded-full border-white/20 text-white hover:bg-white/10 px-10">
+                    Quiero Conducir
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Stats Overlay Bottom */}
+        <div className="absolute bottom-12 left-0 right-0 z-20 hidden lg:block">
+          <div className="container max-w-7xl mx-auto px-6">
+            <div className="flex gap-12 border-l border-white/10 pl-8">
+              {stats.slice(0, 3).map((stat) => (
+                <div key={stat.label}>
+                  <div className="text-2xl font-bold text-white">{stat.value}</div>
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground">{stat.label}</div>
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
+      </section>
 
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold mb-6 leading-tight drop-shadow-2xl">
-              <span className="text-white">Rompe las</span>
-              <br />
-              <span className="text-primary neon-text">Reglas del Juego</span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-10 font-medium drop-shadow-md">
-              Sin precios fijos. Sin algoritmos injustos.
-              <span className="text-white font-bold"> Tú decides cuánto pagar.</span>
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/rider">
-                <Button variant="neon" size="xl" className="group">
-                  <Users className="w-5 h-5" />
-                  Soy Pasajero
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link to="/driver">
-                <Button variant="neon-outline" size="xl" className="group">
-                  <Car className="w-5 h-5" />
-                  Soy Conductor
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+      {/* Features - White Section for Contrast */}
+      <section className="py-32 bg-white text-black relative z-10">
+        <div className="container max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div>
+              <h2 className="text-4xl lg:text-5xl font-display font-black mb-8 leading-tight">
+                ¿Por qué elegir <span className="text-primary">Rapicarm</span> sobre los demás?
+              </h2>
+              <div className="space-y-8">
+                {features.map((feature, i) => (
+                  <div key={i} className="flex gap-6">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <feature.icon className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                      <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
-          <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/50 flex items-start justify-center p-2">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 border-t border-border">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-4xl md:text-5xl font-display font-bold text-primary neon-text mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-muted-foreground">{stat.label}</div>
+            <div className="relative">
+              <div className="aspect-square bg-[#f0f0f0] rounded-[3rem] overflow-hidden rotate-3 shadow-2xl">
+                <img
+                  src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=2069&auto=format&fit=crop"
+                  alt="Feature illustration"
+                  className="w-full h-full object-cover"
+                />
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-24 bg-gradient-mesh">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              ¿Por qué <span className="text-primary">Rapicarm</span>?
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Una plataforma diseñada para ti, no para las corporaciones
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="glass-strong rounded-2xl p-6 hover:border-primary/50 transition-all group hover:-translate-y-1"
-              >
-                <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <feature.icon className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-xl font-display font-semibold mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-muted-foreground">
-                  {feature.description}
-                </p>
+              <div className="absolute -bottom-8 -left-8 bg-primary p-8 rounded-3xl shadow-xl -rotate-6 hidden sm:block">
+                <div className="text-4xl font-black text-black">100%</div>
+                <div className="text-sm font-bold text-black/60 uppercase tracking-tighter">Transparente</div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works */}
-      <section className="py-24 border-t border-border">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Así de <span className="text-accent neon-text-cyan">Simple</span>
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {[
-              { step: '01', title: 'Indica tu destino', desc: 'Selecciona origen y destino en el mapa' },
-              { step: '02', title: 'Propón tu precio', desc: 'Ve el estimado y ofrece lo que quieras pagar' },
-              { step: '03', title: 'Negocia y viaja', desc: 'Los conductores aceptan o contraofrecen' },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="text-6xl font-display font-bold text-primary/20 mb-4">
-                  {item.step}
-                </div>
-                <h3 className="text-xl font-display font-semibold mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-muted-foreground">{item.desc}</p>
-              </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-mesh">
-        <div className="container mx-auto px-6">
-          <div className="glass-strong rounded-3xl p-12 text-center max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-              ¿Listo para <span className="text-primary neon-text">despegar</span>?
-            </h2>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Únete a miles de usuarios que ya disfrutan de viajes justos y transparentes
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/auth?mode=signup">
-                <Button variant="neon" size="xl">
-                  Crear Cuenta Gratis
-                </Button>
-              </Link>
-              <Link to="/auth">
-                <Button variant="glass" size="xl">
-                  Ya tengo cuenta
-                </Button>
-              </Link>
+      <section className="py-24 bg-[#0a0a0a]">
+        <div className="container max-w-5xl mx-auto px-6">
+          <div className="bg-primary p-12 lg:p-20 rounded-[3rem] text-center relative overflow-hidden">
+            <div className="relative z-10 text-black">
+              <h2 className="text-4xl lg:text-6xl font-display font-black mb-8 tracking-tighter">
+                Únete a la nueva era del transporte.
+              </h2>
+              <p className="text-lg font-medium mb-12 max-w-xl mx-auto opacity-80">
+                Miles de personas ya están negociando sus viajes de forma justa y segura. ¿Qué esperas?
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Link to="/auth?mode=signup">
+                  <Button size="xl" className="bg-black text-white hover:bg-neutral-800 rounded-full px-12">
+                    Empezar Ahora
+                  </Button>
+                </Link>
+              </div>
             </div>
+            {/* Background elements for CTA */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/5 rounded-full -ml-32 -mb-32 blur-3xl" />
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-border">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Car className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-display font-bold">Rapicarm</span>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              © 2024 Rapicarm. Construido para romper barreras.
-            </p>
+      {/* Basic Footer */}
+      <footer className="py-12 border-t border-white/5 bg-[#0a0a0a]">
+        <div className="container max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-3">
+            <Car className="w-5 h-5 text-primary" />
+            <span className="font-bold tracking-tight">Rapicarm</span>
           </div>
+          <p className="text-sm text-gray-500 italic">"Diseñado para personas, no para algoritmos."</p>
+          <div className="text-xs text-gray-600">© 2024 Rapicarm S.A. Todos los derechos reservados.</div>
         </div>
       </footer>
     </div>
