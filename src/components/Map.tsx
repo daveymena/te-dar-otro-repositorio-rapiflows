@@ -17,6 +17,7 @@ interface Location {
 interface MapProps {
   origin?: Location | null;
   destination?: Location | null;
+  middleStops?: Location[];
   drivers?: Array<{ id: string; lat: number; lng: number; rotation?: number }>;
   assignedDriver?: { id: string; lat: number; lng: number; rotation?: number } | null;
   className?: string;
@@ -29,6 +30,7 @@ interface MapProps {
 const MapComponent: React.FC<MapProps> = ({
   origin,
   destination,
+  middleStops = [],
   drivers = [],
   assignedDriver = null,
   className = "w-full h-full",
@@ -44,6 +46,7 @@ const MapComponent: React.FC<MapProps> = ({
 
     const coords = [];
     if (origin) coords.push([origin.lng, origin.lat]);
+    middleStops.forEach(s => coords.push([s.lng, s.lat]));
     if (destination) coords.push([destination.lng, destination.lat]);
     if (assignedDriver) coords.push([assignedDriver.lng, assignedDriver.lat]);
 
@@ -63,18 +66,21 @@ const MapComponent: React.FC<MapProps> = ({
         duration: 1500
       });
     }
-  }, [origin, destination, assignedDriver]);
+  }, [origin, destination, assignedDriver, middleStops]);
 
-  // GeoJSON for route line logic (simplified straight line for demo, would be polyline in PROD)
+  // GeoJSON for route line logic
+  const routePoints = [
+    ...(origin ? [[origin.lng, origin.lat]] : []),
+    ...middleStops.map(s => [s.lng, s.lat]),
+    ...(destination ? [[destination.lng, destination.lat]] : [])
+  ];
+
   const routeGeoJSON = {
     type: 'Feature',
     properties: {},
     geometry: {
       type: 'LineString',
-      coordinates: [
-        origin ? [origin.lng, origin.lat] : [0, 0],
-        destination ? [destination.lng, destination.lat] : [0, 0]
-      ]
+      coordinates: routePoints.length > 0 ? routePoints : [[0, 0]]
     }
   };
 
@@ -122,6 +128,20 @@ const MapComponent: React.FC<MapProps> = ({
             </div>
           </Marker>
         )}
+
+        {/* Middle Stops Markers */}
+        {middleStops.map((stop, index) => (
+          <Marker key={index} longitude={stop.lng} latitude={stop.lat} anchor="bottom">
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                <div className="w-6 h-6 bg-white rounded-full border-2 border-primary flex items-center justify-center shadow-lg relative z-10">
+                  <span className="text-[10px] font-bold text-black">{index + 1}</span>
+                </div>
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-primary" />
+              </div>
+            </div>
+          </Marker>
+        ))}
 
         {/* Destination Marker */}
         {destination && (

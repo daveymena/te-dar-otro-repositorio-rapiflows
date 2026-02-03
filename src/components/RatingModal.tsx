@@ -152,13 +152,54 @@ export function RatingModal({
                                     >
                                         <Star
                                             className={`w-12 h-12 transition-colors ${star <= (hoveredRating || rating)
-                                                    ? 'text-yellow-500 fill-yellow-500'
-                                                    : 'text-muted-foreground'
+                                                ? 'text-yellow-500 fill-yellow-500'
+                                                : 'text-muted-foreground'
                                                 }`}
                                         />
                                     </motion.button>
                                 ))}
                             </div>
+
+                            {/* Feedback Tags - Professional style */}
+                            {rating >= 4 && (
+                                <div className="mb-6">
+                                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 text-center">¿Qué te gustó más?</p>
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                        {['Vehículo Limpio', 'Buen Trato', 'Conducción Segura', 'Excelente Música', 'Gran Conversación'].map(tag => (
+                                            <button
+                                                key={tag}
+                                                onClick={() => setComment(prev => prev.includes(tag) ? prev.replace(tag, '').trim() : `${prev} ${tag}`.trim())}
+                                                className={`px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all ${comment.includes(tag)
+                                                        ? 'bg-primary border-primary text-black'
+                                                        : 'bg-secondary/40 border-border text-foreground hover:border-primary/50'
+                                                    }`}
+                                            >
+                                                {tag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {rating > 0 && rating < 4 && (
+                                <div className="mb-6">
+                                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 text-center">¿Qué podemos mejorar?</p>
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                        {['Auto Sucio', 'Conducción Brusca', 'Ruta Larga', 'Mala Actitud', 'Auto con Olor'].map(tag => (
+                                            <button
+                                                key={tag}
+                                                onClick={() => setComment(prev => prev.includes(tag) ? prev.replace(tag, '').trim() : `${prev} ${tag}`.trim())}
+                                                className={`px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all ${comment.includes(tag)
+                                                        ? 'bg-red-500 border-red-500 text-white'
+                                                        : 'bg-secondary/40 border-border text-foreground hover:border-red-500/50'
+                                                    }`}
+                                            >
+                                                {tag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Comment */}
                             <Textarea

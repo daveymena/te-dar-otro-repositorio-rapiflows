@@ -18,7 +18,16 @@ import {
   CheckCircle,
   Bike,
   Utensils,
-  ShoppingBag
+  ShoppingBag,
+  Package,
+  Shield,
+  ArrowRight,
+  Search,
+  Bell,
+  Heart,
+  Phone,
+  Info,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +37,7 @@ import { useRideStore } from '@/store/rideStore';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SafetyCenter } from '@/components/SafetyCenter';
 import { useNavigate, Navigate } from 'react-router-dom';
 import type { Ride, Bid } from '@/lib/supabase';
 import MapComponent from '@/components/Map';
@@ -616,6 +626,7 @@ export function RiderDashboard() {
                   ? origin // Punto B: Pickup
                   : destination // Punto B: Destino Final
               }
+              middleStops={middleStops}
               assignedDriver={currentRide?.driver_id ? realDrivers.find(d => d.id === currentRide.driver_id) : null}
               drivers={realDrivers.map(d => ({
                 id: d.id,
@@ -673,28 +684,34 @@ export function RiderDashboard() {
                 >
                   <h2 className="text-xl font-display font-bold">¿A dónde vamos?</h2>
 
-                  {/* Vehicle Selection */}
-                  <div className="flex p-1 bg-secondary rounded-xl mb-4">
-                    <button
-                      onClick={() => setVehicleType('car')}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${vehicleType === 'car'
-                        ? 'bg-background shadow-sm text-primary'
-                        : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                      <Car className="w-4 h-4" />
-                      Auto
-                    </button>
-                    <button
-                      onClick={() => setVehicleType('moto')}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${vehicleType === 'moto'
-                        ? 'bg-background shadow-sm text-primary'
-                        : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                      <Bike className="w-4 h-4" />
-                      Moto
-                    </button>
+                  {/* Professional Vehicle Categories Selector - Uber/Didi Style */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Selecciona tu categoría</span>
+                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                      {[
+                        { id: 'economy', name: 'Ahorro', icon: Car, desc: 'Económico', price: 'x1.0' },
+                        { id: 'comfort', name: 'Comfort', icon: Shield, desc: 'Premium', price: 'x1.4' },
+                        { id: 'moto', name: 'Moto', icon: Bike, desc: 'Rápido', price: 'x0.6' },
+                        { id: 'delivery', name: 'Envío', icon: Package, desc: 'Paquetes', price: 'Fixed' },
+                      ].map((type) => (
+                        <button
+                          key={type.id}
+                          onClick={() => setVehicleType(type.id as any)}
+                          className={`flex-shrink-0 w-24 snap-start p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1.5 ${vehicleType === type.id
+                            ? 'border-primary bg-primary/10 shadow-lg'
+                            : 'border-border bg-card hover:border-muted-foreground/30'
+                            }`}
+                        >
+                          <div className={`p-2 rounded-xl ${vehicleType === type.id ? 'bg-primary text-black' : 'bg-secondary text-muted-foreground'}`}>
+                            <type.icon className="w-5 h-5" />
+                          </div>
+                          <div className="text-center">
+                            <div className={`text-[11px] font-black uppercase ${vehicleType === type.id ? 'text-primary' : 'text-foreground'}`}>{type.name}</div>
+                            <div className="text-[9px] text-muted-foreground font-medium">{type.desc}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="space-y-3">
@@ -709,49 +726,86 @@ export function RiderDashboard() {
                       />
                     </div>
 
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 bg-accent rounded-full" />
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-accent flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 bg-accent rounded-full" />
+                      </div>
                       <Input
-                        placeholder="¿A dónde vas? (Ej: El Poblado Campestre)"
                         value={destinationInput}
                         onChange={(e) => setDestinationInput(e.target.value)}
-                        className="pl-10 h-14 bg-secondary"
-                        autoFocus
+                        placeholder="¿A dónde vas?"
+                        className="pl-10 h-14 bg-secondary/50 border-border rounded-xl text-base focus:ring-accent/50"
                       />
-                      {/* Autocomplete Suggestions - Multi-branch support */}
-                      {searchResults.length > 0 && !destination && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden max-h-[300px] overflow-y-auto">
-                          {isSearching && (
-                            <div className="p-4 text-center text-sm text-muted-foreground">
-                              Buscando sedes cercanas...
-                            </div>
-                          )}
-                          {searchResults.map((place, idx) => (
-                            <button
-                              key={idx}
-                              className="w-full flex items-center gap-3 p-3 hover:bg-secondary text-left transition-colors border-b border-border/50 last:border-0"
-                              onClick={() => {
-                                setDestinationInput(place.name);
-                                setDestination({
-                                  lat: place.lat,
-                                  lng: place.lng,
-                                  address: place.address
-                                });
-                                setSearchResults([]);
-                              }}
-                            >
-                              <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
-                                <MapPin className="w-4 h-4 text-accent" />
-                              </div>
-                              <div className="flex-1 overflow-hidden">
-                                <div className="font-medium text-sm truncate">{place.name}</div>
-                                <div className="text-xs text-muted-foreground truncate">{place.address}</div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      {/* Plus button for multiple stops */}
+                      <button
+                        onClick={() => {
+                          if (destination && !middleStops.find(s => s.address === destination.address)) {
+                            setMiddleStops([...middleStops, destination]);
+                            setDestinationInput('');
+                            setDestination(null);
+                            toast({ title: "Parada añadida", description: "Puedes agregar otra parada o el destino final." });
+                          }
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-accent/20 hover:bg-accent/40 rounded-lg flex items-center justify-center transition-colors"
+                      >
+                        <Plus className="w-5 h-5 text-accent" />
+                      </button>
                     </div>
+
+                    {/* Show added stops */}
+                    {middleStops.length > 0 && (
+                      <div className="space-y-2 ml-4 border-l-2 border-dashed border-border pl-4 py-2">
+                        {middleStops.map((stop, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-secondary/20 p-2 rounded-lg group">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              <div className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] flex items-center justify-center font-bold">
+                                {idx + 1}
+                              </div>
+                              <span className="text-xs truncate text-muted-foreground italic">{stop.address}</span>
+                            </div>
+                            <button
+                              onClick={() => setMiddleStops(middleStops.filter((_, i) => i !== idx))}
+                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Autocomplete Suggestions - Multi-branch support */}
+                    {searchResults.length > 0 && !destination && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden max-h-[300px] overflow-y-auto">
+                        {isSearching && (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Buscando sedes cercanas...
+                          </div>
+                        )}
+                        {searchResults.map((place, idx) => (
+                          <button
+                            key={idx}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-secondary text-left transition-colors border-b border-border/50 last:border-0"
+                            onClick={() => {
+                              setDestinationInput(place.name);
+                              setDestination({
+                                lat: place.lat,
+                                lng: place.lng,
+                                address: place.address
+                              });
+                              setSearchResults([]);
+                            }}
+                          >
+                            <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
+                              <MapPin className="w-4 h-4 text-accent" />
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                              <div className="font-medium text-sm truncate">{place.name}</div>
+                              <div className="text-xs text-muted-foreground truncate">{place.address}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Favorite Places */}
@@ -858,8 +912,8 @@ export function RiderDashboard() {
 
                     {/* Vehicle Info */}
                     <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground bg-secondary/50 py-2 rounded-lg">
-                      {vehicleType === 'car' ? <Car className="w-4 h-4" /> : <Bike className="w-4 h-4" />}
-                      <span>Viajando en {vehicleType === 'car' ? 'Auto' : 'Moto'} (Más {vehicleType === 'moto' ? 'económico' : 'cómodo'})</span>
+                      {['economy', 'comfort'].includes(vehicleType) ? <Car className="w-4 h-4" /> : vehicleType === 'moto' ? <Bike className="w-4 h-4" /> : <Package className="w-4 h-4" />}
+                      <span className="capitalize">Categoría: {vehicleType === 'economy' ? 'RapiAhorro' : vehicleType === 'comfort' ? 'RapiComfort' : vehicleType === 'moto' ? 'RapiMoto' : 'RapiEnvío'}</span>
                     </div>
                   </div>
 
@@ -1163,51 +1217,58 @@ export function RiderDashboard() {
               )}
             </AnimatePresence>
           </motion.div>
-        )
-        }
-      </div >
+        )}
+      </div>
 
       {/* Floating Components */}
-      {
-        currentRide && profile && origin && (
-          <>
-            <EmergencyButton
-              rideId={currentRide.id}
-              userId={profile.id}
-              currentLocation={origin}
-            />
+      {currentRide && profile && origin && (
+        <>
+          <EmergencyButton
+            rideId={currentRide.id}
+            userId={profile.id}
+            currentLocation={origin}
+          />
 
-            <ChatPanel
-              rideId={currentRide.id}
-              currentUserId={profile.id}
-              otherUserName="Conductor"
-              isOpen={isChatOpen}
-              onClose={() => setIsChatOpen(false)}
-            />
+          <ChatPanel
+            rideId={currentRide.id}
+            currentUserId={profile.id}
+            otherUserName="Conductor"
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+          />
 
-            <ShareRide
-              rideId={currentRide.id}
-              userId={profile.id}
-              isOpen={isShareOpen}
-              onClose={() => setIsShareOpen(false)}
-            />
+          <ShareRide
+            rideId={currentRide.id}
+            userId={profile.id}
+            isOpen={isShareOpen}
+            onClose={() => setIsShareOpen(false)}
+          />
 
-            {currentRide.driver_id && (
-              <RatingModal
-                isOpen={isRatingOpen}
-                rideId={currentRide.id}
-                driverId={currentRide.driver_id}
-                driverName="Tu Conductor"
-                onClose={() => setIsRatingOpen(false)}
-                onComplete={() => {
-                  resetRideFlow();
-                  setStep('location');
-                }}
-              />
-            )}
-          </>
-        )
-      }
-    </div >
+          {currentRide.driver_id && (
+            <RatingModal
+              isOpen={isRatingOpen}
+              rideId={currentRide.id}
+              driverId={currentRide.driver_id}
+              driverName="Tu Conductor"
+              onClose={() => setIsRatingOpen(false)}
+              onComplete={() => {
+                resetRideFlow();
+                setStep('location');
+              }}
+            />
+          )}
+        </>
+      )}
+
+      <SafetyCenter
+        rideId={currentRide?.id}
+        driverId={currentRide?.driver_id}
+        onShare={() => setIsShareOpen(true)}
+        onSOS={() => {
+          const sosButton = document.getElementById('sos-trigger-btn');
+          if (sosButton) sosButton.click();
+        }}
+      />
+    </div>
   );
 }

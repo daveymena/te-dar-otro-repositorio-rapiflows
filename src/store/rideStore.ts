@@ -11,6 +11,7 @@ interface RideState {
   // Current ride request flow
   origin: Location | null;
   destination: Location | null;
+  middleStops: Location[]; // Professional feature: Multiple stops
   estimatedPrice: number | null;
   offerPrice: number;
   currentRide: Ride | null;
@@ -20,13 +21,14 @@ interface RideState {
   availableRides: Ride[];
 
   serviceType: 'ride' | 'food';
-  vehicleType: 'car' | 'moto'; // Defaults to car
+  vehicleType: 'economy' | 'comfort' | 'moto' | 'delivery'; // Professional categories like Uber/Didi
 
   // Actions
   setServiceType: (type: 'ride' | 'food') => void;
-  setVehicleType: (type: 'car' | 'moto') => void;
+  setVehicleType: (type: 'economy' | 'comfort' | 'moto' | 'delivery') => void;
   setOrigin: (location: Location | null) => void;
   setDestination: (location: Location | null) => void;
+  setMiddleStops: (stops: Location[]) => void;
   setEstimatedPrice: (price: number | null) => void;
   setOfferPrice: (price: number) => void;
   setCurrentRide: (ride: Ride | null) => void;
@@ -47,13 +49,15 @@ export const useRideStore = create<RideState>((set) => ({
   currentRide: null,
   bids: [],
   availableRides: [],
+  middleStops: [],
   serviceType: 'ride',
-  vehicleType: 'car',
+  vehicleType: 'economy',
 
   setServiceType: (serviceType) => set({ serviceType }),
   setVehicleType: (vehicleType) => set({ vehicleType }),
   setOrigin: (origin) => set({ origin }),
   setDestination: (destination) => set({ destination }),
+  setMiddleStops: (middleStops) => set({ middleStops }),
   setEstimatedPrice: (estimatedPrice) => set({ estimatedPrice }),
   setOfferPrice: (offerPrice) => set({ offerPrice }),
   setCurrentRide: (currentRide) => set({ currentRide }),
@@ -78,6 +82,7 @@ export const useRideStore = create<RideState>((set) => ({
     offerPrice: 0,
     currentRide: null,
     bids: [],
+    middleStops: [],
     // Keep vehicleType and serviceType persistent or reset them if desired
   }),
 }));
