@@ -114,28 +114,33 @@ export function RiderDashboard() {
     driverPosition ? { lat: driverPosition.current_lat || driverPosition.lat || 0, lng: driverPosition.current_lng || driverPosition.lng || 0 } : null
   );
 
-  // Set origin from geolocation automatically on load
+  // Set origin from REAL geolocation automatically on load
   useEffect(() => {
     if (latitude && longitude && !origin && !geoLoading) {
       const initLocation = async () => {
-        const vias = ['Calle', 'Carrera', 'Diagonal', 'Transversal', 'Avenida'];
-        const seed = Math.floor((Math.abs(latitude) + Math.abs(longitude)) * 10000);
+        try {
+          // Import dynamic to avoid circular dependencies
+          const { reverseGeocode } = await import('@/services/routingService');
+          const realAddress = await reverseGeocode({ lat: latitude, lng: longitude });
 
-        const viaPrincipal = vias[seed % vias.length];
-        const numPrincipal = Math.floor((seed % 150) + 1);
-        const numGeneradora = Math.floor((seed % 100) + 1);
-        const numPlaca = Math.floor((seed % 99) + 1);
+          if (realAddress) {
+            console.log('Real address found:', realAddress);
+            setOrigin({ lat: latitude, lng: longitude, address: realAddress });
+            setOriginInput(realAddress.split(',')[0]); // Use first part of the address
 
-        const direccionNormalizada = `${viaPrincipal} ${numPrincipal} # ${numGeneradora} - ${numPlaca}`;
-
-        console.log('Detecting location automatically:', { latitude, longitude, address: direccionNormalizada });
-        setOrigin({ lat: latitude, lng: longitude, address: direccionNormalizada });
-        setOriginInput(direccionNormalizada);
-
-        toast({
-          title: "Ubicación detectada",
-          description: `Estás en ${direccionNormalizada}`,
-        });
+            toast({
+              title: "Ubicación detectada",
+              description: realAddress.split(',')[0],
+            });
+          } else {
+            // Fallback to simple format if geocoding fails
+            const fallback = `Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`;
+            setOrigin({ lat: latitude, lng: longitude, address: fallback });
+            setOriginInput(fallback);
+          }
+        } catch (err) {
+          console.error('Error in automatic detection:', err);
+        }
       };
 
       initLocation();
