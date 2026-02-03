@@ -53,18 +53,40 @@ export async function getOptimizedRoute(
     }
 }
 
-export async function geocodeAddress(address: string): Promise<Coordinates | null> {
+
+export async function searchPlaces(query: string, proximity?: Coordinates): Promise<any[]> {
     try {
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`;
+        const proximityQuery = proximity ? `&proximity=${proximity.lng},${proximity.lat}` : '';
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5${proximityQuery}&language=es`;
 
         const response = await fetch(url);
         const data = await response.json();
 
+        if (data.features) {
+            return data.features.map((f: any) => ({
+                name: f.text,
+                address: f.place_name,
+                lat: f.center[1],
+                lng: f.center[0]
+            }));
+        }
+
+        return [];
+    } catch (error) {
+        console.error('Error searching places:', error);
+        return [];
+    }
+}
+
+export async function geocodeAddress(address: string): Promise<Coordinates | null> {
+    try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`;
+        const response = await fetch(url);
+        const data = await response.json();
         if (data.features && data.features.length > 0) {
             const [lng, lat] = data.features[0].center;
             return { lat, lng };
         }
-
         return null;
     } catch (error) {
         console.error('Error geocoding address:', error);

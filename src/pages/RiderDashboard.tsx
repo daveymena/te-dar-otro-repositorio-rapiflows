@@ -84,6 +84,8 @@ export function RiderDashboard() {
   const [originInput, setOriginInput] = useState('');
   const [destinationInput, setDestinationInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -147,7 +149,30 @@ export function RiderDashboard() {
     }
   }, [latitude, longitude, geoLoading, origin, setOrigin, setOriginInput]);
 
-  // Calculate estimated price when destination is set
+  // Dynamic Place Search Effect
+  useEffect(() => {
+    if (destinationInput.length < 3 || destination) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const { searchPlaces } = await import('@/services/routingService');
+        const results = await searchPlaces(destinationInput,
+          latitude && longitude ? { lat: latitude, lng: longitude } : undefined
+        );
+        setSearchResults(results);
+      } catch (err) {
+        console.error('Search failed:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500); // Debounce search
+
+    return () => clearTimeout(timer);
+  }, [destinationInput, destination, latitude, longitude]);
   useEffect(() => {
     if (origin && destination) {
       // Mock distance calculation (in real app, use Mapbox Directions API)
@@ -691,39 +716,37 @@ export function RiderDashboard() {
                         className="pl-10 h-14 bg-secondary"
                         autoFocus
                       />
-                      {/* Autocomplete Suggestions */}
-                      {destinationInput.length > 2 && !destination && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-                          {[
-                            { name: 'El Poblado Campestre', address: 'Calle 15 # 102-20, Sur' },
-                            { name: 'Centro Comercial Unicentro', address: 'Avenida Pasoancho # 5-130' },
-                            { name: 'Parque del Perro', address: 'Carrera 34 # 3-2, San Fernando' },
-                            { name: 'Terminal de Transportes', address: 'Calle 30N # 2A-29' },
-                            { name: 'Barrio Granada', address: 'Avenida 9N # 15-00, Norte' }
-                          ]
-                            .filter(p => p.name.toLowerCase().includes(destinationInput.toLowerCase()))
-                            .map((place, idx) => (
-                              <button
-                                key={idx}
-                                className="w-full flex items-center gap-3 p-3 hover:bg-secondary text-left transition-colors border-b border-border/50 last:border-0"
-                                onClick={() => {
-                                  setDestinationInput(place.name);
-                                  setDestination({
-                                    lat: origin?.lat! + (Math.random() - 0.5) * 0.05,
-                                    lng: origin?.lng! + (Math.random() - 0.5) * 0.05,
-                                    address: place.address
-                                  });
-                                }}
-                              >
-                                <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
-                                  <MapPin className="w-4 h-4 text-accent" />
-                                </div>
-                                <div>
-                                  <div className="font-medium text-sm">{place.name}</div>
-                                  <div className="text-xs text-muted-foreground">{place.address}</div>
-                                </div>
-                              </button>
-                            ))}
+                      {/* Autocomplete Suggestions - Multi-branch support */}
+                      {searchResults.length > 0 && !destination && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden max-h-[300px] overflow-y-auto">
+                          {isSearching && (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                              Buscando sedes cercanas...
+                            </div>
+                          )}
+                          {searchResults.map((place, idx) => (
+                            <button
+                              key={idx}
+                              className="w-full flex items-center gap-3 p-3 hover:bg-secondary text-left transition-colors border-b border-border/50 last:border-0"
+                              onClick={() => {
+                                setDestinationInput(place.name);
+                                setDestination({
+                                  lat: place.lat,
+                                  lng: place.lng,
+                                  address: place.address
+                                });
+                                setSearchResults([]);
+                              }}
+                            >
+                              <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
+                                <MapPin className="w-4 h-4 text-accent" />
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                <div className="font-medium text-sm truncate">{place.name}</div>
+                                <div className="text-xs text-muted-foreground truncate">{place.address}</div>
+                              </div>
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
