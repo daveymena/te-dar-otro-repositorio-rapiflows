@@ -453,8 +453,8 @@ export function RiderDashboard() {
 
   // Main Content
   return (
-    <div className="h-screen bg-background flex">
-      {/* Sidebar */}
+    <div className="h-screen flex bg-background overflow-hidden layout-fix">
+      {/* Sidebar - Remains desktop friendly */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -596,8 +596,23 @@ export function RiderDashboard() {
                 lng: d.current_lng || 0,
                 rotation: Math.random() * 360
               }))}
-              showRoute={true} // Always show route
-              routeColor={['accepted', 'driver_arriving'].includes(currentRide?.status || '') ? '#2563eb' : '#ea580c'} // Blue for pickup, Orange for trip
+              onMapClick={async (lat, lng) => {
+                if (step === 'location' || step === 'price') {
+                  console.log('Map clicked:', { lat, lng });
+                  try {
+                    const { reverseGeocode } = await import('@/services/routingService');
+                    const address = await reverseGeocode({ lat, lng });
+                    if (address) {
+                      setDestination({ lat, lng, address });
+                      setDestinationInput(address.split(',')[0]);
+                    } else {
+                      setDestination({ lat, lng, address: `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}` });
+                    }
+                  } catch (err) {
+                    console.error('Error on map click geocoding:', err);
+                  }
+                }
+              }}
             />
           )}
 
@@ -610,12 +625,15 @@ export function RiderDashboard() {
           )}
         </div>
 
-        {/* Bottom Sheet */}
+        {/* Bottom Panel - Android Style Bottom Sheet for Mobile */}
         {serviceType === 'ride' && (
           <motion.div
-            className="bg-card border-t border-border rounded-t-3xl p-6 space-y-4"
+            className="bg-card border-t border-border rounded-t-3xl p-4 sm:p-6 space-y-4 shadow-2xl relative z-20 max-h-[80vh] overflow-y-auto layout-fix"
             layout
           >
+            {/* Visual Drag Indicator for Mobile */}
+            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-2 sm:hidden opacity-50" />
+
             <AnimatePresence mode="wait">
               {/* Step 1: Location Input */}
               {step === 'location' && (

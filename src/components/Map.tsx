@@ -23,6 +23,7 @@ interface MapProps {
   interactive?: boolean;
   showRoute?: boolean;
   routeColor?: string;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
 const MapComponent: React.FC<MapProps> = ({
@@ -33,7 +34,8 @@ const MapComponent: React.FC<MapProps> = ({
   className = "w-full h-full",
   interactive = true,
   showRoute = true,
-  routeColor = '#9b87f5'
+  routeColor = '#9b87f5',
+  onMapClick
 }) => {
   const mapRef = useRef<MapRef>(null);
 
@@ -90,6 +92,11 @@ const MapComponent: React.FC<MapProps> = ({
         mapboxAccessToken={MAPBOX_TOKEN}
         attributionControl={false}
         interactive={interactive}
+        onClick={(e) => {
+          if (onMapClick) {
+            onMapClick(e.lngLat.lat, e.lngLat.lng);
+          }
+        }}
       >
         {/* Origin Marker */}
         {origin && (
