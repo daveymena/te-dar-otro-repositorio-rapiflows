@@ -11,10 +11,11 @@ import {
   Navigation,
   Power,
   Clock,
-  X,
-  TrendingUp,
-  CheckCircle,
-  Shield
+  Shield,
+  Zap,
+  Clock3,
+  BarChart3,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -483,6 +484,29 @@ export function DriverDashboard() {
                 </button>
               </nav>
 
+              {/* Weekly Performance Graph Mockup */}
+              <div className="mt-8 p-4 rounded-2xl bg-secondary/30 border border-border/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Rendimiento Semanal</div>
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex items-end justify-between h-24 gap-1">
+                  {[40, 70, 45, 90, 65, 80, 50].map((h, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ height: 0 }}
+                      animate={{ height: `${h}%` }}
+                      className={`w-full rounded-t-md ${i === 3 ? 'bg-primary shadow-[0_0_10px_rgba(155,135,245,0.5)]' : 'bg-muted-foreground/20'}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex justify-between mt-2 text-[8px] font-bold text-muted-foreground uppercase">
+                  <span>Lun</span>
+                  <span>Jue</span>
+                  <span>Dom</span>
+                </div>
+              </div>
+
               <div className="absolute bottom-6 left-6 right-6">
                 <Button
                   variant="ghost"
@@ -529,24 +553,35 @@ export function DriverDashboard() {
         </button>
       </header>
 
-      {/* Stats Bar */}
-      <div className="grid grid-cols-2 gap-4 p-4 bg-background/50 backdrop-blur-md">
-        <div className="glass-strong rounded-2xl p-5 border-l-4 border-primary shadow-xl">
-          <div className="flex items-center gap-2 text-foreground/70 mb-2">
-            <DollarSign className="w-4 h-4 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-wider">Hoy</span>
+      {/* Stats Bar - Professional Earnings Overview */}
+      <div className="p-4 bg-background/50 backdrop-blur-md">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="glass-strong rounded-2xl p-4 border-b-4 border-primary shadow-xl flex flex-col items-center">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+              <Wallet className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">Hoy</span>
+            </div>
+            <div className="text-xl font-display font-black text-primary">
+              ${todayEarnings.toLocaleString('es-CO')}
+            </div>
           </div>
-          <div className="text-3xl font-display font-bold text-primary neon-text">
-            ${todayEarnings}
+          <div className="glass-strong rounded-2xl p-4 border-b-4 border-accent shadow-xl flex flex-col items-center">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+              <Zap className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">Viajes</span>
+            </div>
+            <div className="text-xl font-display font-black text-accent">
+              {todayRides}
+            </div>
           </div>
-        </div>
-        <div className="glass-strong rounded-2xl p-5 border-l-4 border-accent shadow-xl">
-          <div className="flex items-center gap-2 text-foreground/70 mb-2">
-            <Navigation className="w-4 h-4 text-accent" />
-            <span className="text-xs font-bold uppercase tracking-wider">Viajes</span>
-          </div>
-          <div className="text-3xl font-display font-bold text-accent">
-            {todayRides}
+          <div className="glass-strong rounded-2xl p-4 border-b-4 border-purple-500 shadow-xl flex flex-col items-center">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+              <Clock3 className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">Online</span>
+            </div>
+            <div className="text-xl font-display font-black text-purple-500">
+              {isOnline ? '03:45' : '00:00'}h
+            </div>
           </div>
         </div>
       </div>
@@ -646,8 +681,15 @@ export function DriverDashboard() {
           </div>
         ) : !isOnline ? (
           <div className="h-full flex items-center justify-center p-6 relative">
-            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-              <MapComponent />
+            <div className="absolute inset-0 z-0 opacity-40">
+              <MapComponent
+                demandPoints={[
+                  { lat: 3.4516, lng: -76.5320, intensity: 0.8 },
+                  { lat: 3.3768, lng: -76.5312, intensity: 0.6 },
+                  { lat: 3.4716, lng: -76.5220, intensity: 0.4 },
+                  { lat: 3.4216, lng: -76.5120, intensity: 0.7 },
+                ]}
+              />
             </div>
             <div className="text-center z-10 glass p-8 rounded-2xl">
               <div className="w-24 h-24 mx-auto bg-secondary rounded-full flex items-center justify-center mb-6">
@@ -834,26 +876,28 @@ export function DriverDashboard() {
       </AnimatePresence>
 
       {/* Floating Components */}
-      {activeRide && profile && driverPosition && (
-        <>
-          <EmergencyButton
-            rideId={activeRide.id}
-            userId={profile.id}
-            currentLocation={{
-              lat: driverPosition.latitude,
-              lng: driverPosition.longitude,
-            }}
-          />
+      {
+        activeRide && profile && driverPosition && (
+          <>
+            <EmergencyButton
+              rideId={activeRide.id}
+              userId={profile.id}
+              currentLocation={{
+                lat: driverPosition.latitude,
+                lng: driverPosition.longitude,
+              }}
+            />
 
-          <ChatPanel
-            rideId={activeRide.id}
-            currentUserId={profile.id}
-            otherUserName={riderName}
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-          />
-        </>
-      )}
-    </div>
+            <ChatPanel
+              rideId={activeRide.id}
+              currentUserId={profile.id}
+              otherUserName={riderName}
+              isOpen={isChatOpen}
+              onClose={() => setIsChatOpen(false)}
+            />
+          </>
+        )
+      }
+    </div >
   );
 }

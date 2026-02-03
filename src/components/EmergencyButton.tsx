@@ -125,10 +125,11 @@ export function EmergencyButton({ rideId, userId, currentLocation }: EmergencyBu
 
     return (
         <motion.button
+            id="sos-trigger-btn"
             whileTap={{ scale: 0.95 }}
             onClick={handleEmergencyPress}
             disabled={isProcessing}
-            className="fixed bottom-24 right-4 z-40 w-16 h-16 bg-destructive rounded-full shadow-2xl flex items-center justify-center border-4 border-background hover:scale-110 transition-transform active:scale-95 disabled:opacity-50"
+            className="fixed bottom-40 right-4 z-40 w-16 h-16 bg-destructive rounded-full shadow-2xl flex items-center justify-center border-4 border-background hover:scale-110 transition-transform active:scale-95 disabled:opacity-50"
             style={{
                 boxShadow: '0 0 30px rgba(239, 68, 68, 0.5), 0 0 60px rgba(239, 68, 68, 0.3)',
             }}

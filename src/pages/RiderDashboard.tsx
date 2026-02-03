@@ -50,6 +50,7 @@ import { ShareRide } from '@/components/ShareRide';
 import { FavoritePlaces } from '@/components/FavoritePlaces';
 import { FoodPanel } from '@/components/FoodPanel';
 import { useRouteTracking } from '@/services/routingService';
+import { WalletCard } from '@/components/WalletCard';
 
 // Mock data for demonstration
 const mockDrivers = [
@@ -81,8 +82,10 @@ export function RiderDashboard() {
     resetRideFlow,
     serviceType,
     vehicleType,
+    middleStops,
     setServiceType,
-    setVehicleType
+    setVehicleType,
+    setMiddleStops
   } = useRideStore();
 
   const [step, setStep] = useState<RideStep>('location');
@@ -187,11 +190,20 @@ export function RiderDashboard() {
   }, [destinationInput, destination, latitude, longitude]);
   useEffect(() => {
     if (origin && destination) {
-      // Mock distance calculation (in real app, use Mapbox Directions API)
-      const distance = Math.sqrt(
-        Math.pow(destination.lat - origin.lat, 2) +
-        Math.pow(destination.lng - origin.lng, 2)
-      ) * 111; // Rough km conversion
+      // Mock distance calculation with MULTIPLE STOPS support
+      const points = [origin, ...middleStops, destination];
+      let distance = 0;
+
+      for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        if (p1 && p2) {
+          distance += Math.sqrt(
+            Math.pow(p2.lat - p1.lat, 2) +
+            Math.pow(p2.lng - p1.lng, 2)
+          ) * 111;
+        }
+      }
 
       // Lógica de Precios Avanzada (Adaptada a Villa Gorgona/Candelaria vs Cali)
       // Detectar zona basada en la dirección (Simulación)
@@ -205,6 +217,19 @@ export function RiderDashboard() {
         destAddress.includes('gorgona') ||
         destAddress.includes('candelaria');
 
+      const categoryMultipliers = {
+        economy: 1.0,
+        comfort: 1.4,
+        moto: 0.7,
+        delivery: 1.2
+      };
+
+      // Dinamic Demand Simulator (Surge Pricing)
+      // Logic: If in Cali (not rural) and during peak hours or hot zones
+      const isHotZone = !isRuralOrTown && (currentAddress.includes('centro') || currentAddress.includes('universidad'));
+      const demandMultiplier = isHotZone ? 1.25 : 1.0;
+
+      const multiplier = (categoryMultipliers[vehicleType as keyof typeof categoryMultipliers] || 1.0) * demandMultiplier;
       const isMoto = vehicleType === 'moto';
 
       // Tarifas Base y Mínimas
@@ -214,56 +239,50 @@ export function RiderDashboard() {
 
       if (isRuralOrTown) {
         // Tarifas "Pueblo" (Villa Gorgona, Candelaria)
-        // Más económicas para corta distancia, pero con mínimas específicas
         if (isMoto) {
           basePrice = 2500;
           pricePerKm = 1000;
           minFare = 4000;
         } else {
-          // Carro
+          // Carro (Economy/Comfort/Delivery)
           basePrice = 4000;
           pricePerKm = 1800;
-          minFare = 7000; // REGLA DE NEGOCIO: Mínima 7000 en Villa Gorgona
+          minFare = 7000;
         }
       } else {
         // Tarifas Ciudad (Cali)
-        // Estándar de mercado (competencia Didi/Uber)
         if (isMoto) {
           basePrice = 3000;
           pricePerKm = 900;
           minFare = 5000;
         } else {
-          // Carro
-          basePrice = 4800; // Ajuste competitivo
+          // Carro (Economy/Comfort/Delivery)
+          basePrice = 4800;
           pricePerKm = 1600;
           minFare = 8000;
         }
       }
 
       // 🕒 Factor Tiempo (Costo por Minuto)
-      // Estimamos velocidad promedio: Carro 22km/h (tráfico Cali), Moto 35km/h
-      const avgSpeedKmH = isMoto ? 35 : 22;
+      const avgSpeedKmH = isMoto ? 33 : 20; // Un poco más lento en ciudad
       const estimatedDurationMinutes = (distance / avgSpeedKmH) * 60;
-
-      const pricePerMinute = isMoto ? 150 : 350; // $350/min carro, $150/min moto
+      const pricePerMinute = isMoto ? 150 : 380;
       const timeCost = estimatedDurationMinutes * pricePerMinute;
 
-      // Cálculo del precio TOTAL (Base + Distancia + Tiempo)
-      let rawPrice = basePrice + (distance * pricePerKm) + timeCost;
+      // Cálculo del precio TOTAL con multiplicador
+      let rawPrice = (basePrice + (distance * pricePerKm) + timeCost) * multiplier;
 
-      // Aplicar mínima
-      if (rawPrice < minFare) rawPrice = minFare;
+      // Aplicar mínima (ajustada por multiplicador)
+      const adjustedMinFare = minFare * (multiplier > 1 ? multiplier * 0.9 : multiplier);
+      if (rawPrice < adjustedMinFare) rawPrice = adjustedMinFare;
 
-      // Redondear a la centena más cercana (COP style)
+      // Redondear a la centena más cercana
       const estimated = Math.round(rawPrice / 100) * 100;
-
-      // NOTA INTERNA: La App cobra 10% de comisión sobre este valor
-      // const appCommission = estimated * 0.10; 
 
       setEstimatedPrice(estimated);
       setOfferPrice(estimated);
     }
-  }, [origin, destination, vehicleType, setEstimatedPrice, setOfferPrice]);
+  }, [origin, destination, middleStops, vehicleType, setEstimatedPrice, setOfferPrice]);
 
   // Subscribe to ride updates
   useEffect(() => {
@@ -535,6 +554,15 @@ export function RiderDashboard() {
                   <Navigation className="w-5 h-5" />
                   Mis Viajes
                 </button>
+
+                {/* Visual Wallet context in sidebar */}
+                <div className="py-2">
+                  <WalletCard
+                    balance={75000}
+                    userName={profile?.full_name || 'Usuario'}
+                  />
+                </div>
+
                 <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary text-muted-foreground">
                   <Star className="w-5 h-5" />
                   Favoritos
@@ -634,6 +662,12 @@ export function RiderDashboard() {
                 lng: d.current_lng || 0,
                 rotation: Math.random() * 360
               }))}
+              demandPoints={[
+                { lat: 3.4516, lng: -76.5320, intensity: 0.8 }, // Cali Centro
+                { lat: 3.3768, lng: -76.5312, intensity: 0.6 }, // Unicentro
+                { lat: 3.4716, lng: -76.5220, intensity: 0.4 }, // Chipichape
+                { lat: 3.4216, lng: -76.5120, intensity: 0.7 }, // Calle 5ta
+              ]}
               onMapClick={async (lat, lng) => {
                 if (step === 'location' || step === 'price') {
                   console.log('Map clicked:', { lat, lng });

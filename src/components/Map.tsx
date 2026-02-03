@@ -25,6 +25,7 @@ interface MapProps {
   showRoute?: boolean;
   routeColor?: string;
   onMapClick?: (lat: number, lng: number) => void;
+  demandPoints?: Array<{ lat: number; lng: number; intensity: number }>;
 }
 
 const MapComponent: React.FC<MapProps> = ({
@@ -37,9 +38,20 @@ const MapComponent: React.FC<MapProps> = ({
   interactive = true,
   showRoute = true,
   routeColor = '#9b87f5',
-  onMapClick
+  onMapClick,
+  demandPoints = []
 }) => {
   const mapRef = useRef<MapRef>(null);
+
+  // GeoJSON for Demand Heatmap
+  const heatmapGeoJSON = {
+    type: 'FeatureCollection',
+    features: demandPoints.map(p => ({
+      type: 'Feature',
+      properties: { intensity: p.intensity },
+      geometry: { type: 'Point', coordinates: [p.lng, p.lat] }
+    }))
+  };
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -104,6 +116,32 @@ const MapComponent: React.FC<MapProps> = ({
           }
         }}
       >
+        {/* Demand Heatmap Layer */}
+        {demandPoints.length > 0 && (
+          <Source id="demand-heat" type="geojson" data={heatmapGeoJSON as any}>
+            <Layer
+              id="demand-heat-layer"
+              type="heatmap"
+              paint={{
+                'heatmap-weight': ['get', 'intensity'],
+                'heatmap-intensity': 1,
+                'heatmap-color': [
+                  'interpolate',
+                  ['linear'],
+                  ['heatmap-density'],
+                  0, 'rgba(0,0,0,0)',
+                  0.2, 'rgba(155, 135, 245, 0.2)', // Primary color low density
+                  0.4, 'rgba(155, 135, 245, 0.4)',
+                  0.6, 'rgba(255, 0, 255, 0.5)',   // Accent color mid density
+                  0.8, 'rgba(255, 0, 0, 0.6)'      // Danger/Hot high density
+                ],
+                'heatmap-radius': 50,
+                'heatmap-opacity': 0.4
+              }}
+            />
+          </Source>
+        )}
+
         {/* Origin Marker */}
         {origin && (
           <Marker longitude={origin.lng} latitude={origin.lat} anchor="bottom">
