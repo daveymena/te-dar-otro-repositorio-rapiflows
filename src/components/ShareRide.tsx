@@ -76,7 +76,7 @@ export function ShareRide({ rideId, userId, isOpen, onClose }: ShareRideProps) {
     const shareViaWhatsApp = () => {
         if (!shareLink) return;
         const message = encodeURIComponent(
-            `🚗 Estoy en un viaje con AntiGravity. Sígueme en tiempo real: ${shareLink}`
+            `🚗 Estoy en un viaje con Rapicarm. Sígueme en tiempo real: ${shareLink}`
         );
         window.open(`https://wa.me/?text=${message}`, '_blank');
     };

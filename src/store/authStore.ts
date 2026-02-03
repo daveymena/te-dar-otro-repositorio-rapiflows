@@ -30,38 +30,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    let retries = 5;
-    while (retries > 0) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+    try {
+      let retries = 5;
+      while (retries > 0) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle(); // maybeSingle doesn't error on 0 results
 
-      if (data) {
-        set({ profile: data as Profile, isLoading: false });
-        return;
-      }
+        if (data) {
+          console.log('Profile loaded successfully');
+          set({ profile: data as Profile, isLoading: false });
+          return;
+        }
 
-      if (error) {
-        // PGRST205 means table doesn't exist. No point in retrying.
-        if (error.code === 'PGRST205') {
-          console.error('Critical Error: Profiles table missing. Please run SQL migrations.', error);
+        if (error && error.code === 'PGRST205') {
+          console.error('Critical Database Error: Profiles table missing.');
           break;
         }
 
-        // PGRST116 means profile not found yet (trigger might be running)
-        if (error.code !== 'PGRST116') {
-          console.error('Error fetching profile:', error);
-          break;
-        }
+        console.log(`Profile not found, waiting for DB trigger... (${retries} left)`);
+        retries--;
+        if (retries > 0) await new Promise(resolve => setTimeout(resolve, 1500));
       }
-
-      console.log(`Profile not found, retrying... (${retries} retries left)`);
-      retries--;
-      if (retries > 0) await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      console.error('Unified Auth Error:', err);
     }
 
+    // If we reach here, we failed to find a profile
     set({ profile: null, isLoading: false });
   },
 

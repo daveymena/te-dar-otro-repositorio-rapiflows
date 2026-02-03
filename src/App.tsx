@@ -16,14 +16,12 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ErrorBoundary>
-    <div style={{ position: 'fixed', top: 0, left: 0, padding: '2px', background: 'green', color: 'white', zIndex: 9999, fontSize: '10px' }}>
-      AntiGravity Engine Active
-    </div>
+
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />

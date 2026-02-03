@@ -43,7 +43,8 @@ export function Landing() {
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${heroBg})` }}
         >
-          <div className="absolute inset-0 bg-background/80 bg-gradient-mesh" />
+          <div className="absolute inset-0 bg-background/90 bg-gradient-to-t from-black via-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
 
         {/* Decorative Background Elements */}
@@ -56,17 +57,17 @@ export function Landing() {
         <nav className="absolute top-0 left-0 right-0 z-50 p-6">
           <div className="container mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center neon-glow">
-                <Car className="w-6 h-6 text-primary-foreground" />
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center overflow-hidden border border-primary/50">
+                <Car className="w-8 h-8 text-primary" />
               </div>
-              <span className="text-2xl font-display font-bold text-foreground">
-                Anti<span className="text-primary neon-text">Gravity</span>
+              <span className="text-2xl font-display font-bold text-white drop-shadow-lg">
+                Rapi<span className="text-primary neon-text">carm</span>
               </span>
             </div>
 
             <div className="flex items-center gap-4">
               <Link to="/auth">
-                <Button variant="ghost" size="lg">
+                <Button variant="outline" size="lg" className="border-white/20 text-white hover:bg-white/10 hover:text-white">
                   Iniciar Sesión
                 </Button>
               </Link>
@@ -89,15 +90,15 @@ export function Landing() {
               </span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold mb-6 leading-tight">
-              <span className="text-foreground">Rompe las</span>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold mb-6 leading-tight drop-shadow-2xl">
+              <span className="text-white">Rompe las</span>
               <br />
               <span className="text-primary neon-text">Reglas del Juego</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">
+            <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-10 font-medium drop-shadow-md">
               Sin precios fijos. Sin algoritmos injustos.
-              <span className="text-foreground font-medium"> Tú decides cuánto pagar.</span>
+              <span className="text-white font-bold"> Tú decides cuánto pagar.</span>
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -148,7 +149,7 @@ export function Landing() {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              ¿Por qué <span className="text-primary">AntiGravity</span>?
+              ¿Por qué <span className="text-primary">Rapicarm</span>?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Una plataforma diseñada para ti, no para las corporaciones
@@ -239,10 +240,10 @@ export function Landing() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Car className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-display font-bold">AntiGravity</span>
+              <span className="font-display font-bold">Rapicarm</span>
             </div>
             <p className="text-muted-foreground text-sm">
-              © 2024 AntiGravity. Construido para romper barreras.
+              © 2024 Rapicarm. Construido para romper barreras.
             </p>
           </div>
         </div>

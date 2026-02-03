@@ -6,39 +6,49 @@ export function useAuth() {
   const { user, profile, isLoading, setUser, setLoading, fetchProfile } = useAuthStore();
 
   useEffect(() => {
-    // Set up auth state listener BEFORE checking session
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setLoading(true);
-        setUser(session?.user ?? null);
+    let mounted = true;
 
+    async function initializeAuth() {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        setUser(session?.user ?? null);
         if (session?.user) {
           await useAuthStore.getState().fetchProfile();
         } else {
-          useAuthStore.getState().setProfile(null);
+          setLoading(false);
         }
+      } catch (err) {
+        console.error('Auth initialization failed:', err);
+        if (mounted) setLoading(false);
+      }
+    }
 
-        setLoading(false);
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        console.log('Auth event:', event);
+        setUser(session?.user ?? null);
+
+        if (event === 'SIGNED_IN') {
+          await useAuthStore.getState().fetchProfile();
+        } else if (event === 'SIGNED_OUT') {
+          useAuthStore.getState().setProfile(null);
+          setLoading(false);
+        }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Session check:', !!session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await useAuthStore.getState().fetchProfile();
-      }
-      setLoading(false);
-    }).catch(err => {
-      console.error('Session check failed:', err);
-      setLoading(false);
-    });
-
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [setUser, setLoading, fetchProfile]);
+  }, [setUser, setLoading]);
 
   return {
     user,

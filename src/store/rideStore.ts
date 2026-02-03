@@ -15,11 +15,16 @@ interface RideState {
   offerPrice: number;
   currentRide: Ride | null;
   bids: Bid[];
-  
+
   // Available rides for drivers
   availableRides: Ride[];
-  
+
+  serviceType: 'ride' | 'food';
+  vehicleType: 'car' | 'moto'; // Defaults to car
+
   // Actions
+  setServiceType: (type: 'ride' | 'food') => void;
+  setVehicleType: (type: 'car' | 'moto') => void;
   setOrigin: (location: Location | null) => void;
   setDestination: (location: Location | null) => void;
   setEstimatedPrice: (price: number | null) => void;
@@ -42,7 +47,11 @@ export const useRideStore = create<RideState>((set) => ({
   currentRide: null,
   bids: [],
   availableRides: [],
-  
+  serviceType: 'ride',
+  vehicleType: 'car',
+
+  setServiceType: (serviceType) => set({ serviceType }),
+  setVehicleType: (vehicleType) => set({ vehicleType }),
   setOrigin: (origin) => set({ origin }),
   setDestination: (destination) => set({ destination }),
   setEstimatedPrice: (estimatedPrice) => set({ estimatedPrice }),
@@ -51,11 +60,11 @@ export const useRideStore = create<RideState>((set) => ({
   setBids: (bids) => set({ bids }),
   addBid: (bid) => set((state) => ({ bids: [...state.bids, bid] })),
   setAvailableRides: (availableRides) => set({ availableRides }),
-  addAvailableRide: (ride) => set((state) => ({ 
-    availableRides: [ride, ...state.availableRides] 
+  addAvailableRide: (ride) => set((state) => ({
+    availableRides: [ride, ...state.availableRides]
   })),
   updateAvailableRide: (ride) => set((state) => ({
-    availableRides: state.availableRides.map((r) => 
+    availableRides: state.availableRides.map((r) =>
       r.id === ride.id ? ride : r
     ),
   })),
@@ -69,5 +78,6 @@ export const useRideStore = create<RideState>((set) => ({
     offerPrice: 0,
     currentRide: null,
     bids: [],
+    // Keep vehicleType and serviceType persistent or reset them if desired
   }),
 }));

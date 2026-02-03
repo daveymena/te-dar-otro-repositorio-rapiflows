@@ -352,21 +352,45 @@ export function DriverDashboard() {
           </p>
 
           {profile?.verification_status === 'unverified' ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-4 text-left">
+                {[
+                  { label: 'Licencia de Conducir', icon: Shield },
+                  { label: 'Tarjeta de Propiedad', icon: Car },
+                  { label: 'Cédula de Ciudadanía', icon: User }
+                ].map((doc, idx) => (
+                  <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-secondary/50 border border-border/50 group hover:border-primary/30 transition-all">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <doc.icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold">{doc.label}</div>
+                      <div className="text-xs text-muted-foreground">Pendiente por subir</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {uploading ? (
-                <div className="space-y-2">
-                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                <div className="space-y-3 p-6 glass rounded-2xl">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-primary font-bold">Verificando archivos...</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="h-3 w-full bg-secondary rounded-full overflow-hidden">
                     <motion.div
-                      className="h-full bg-primary"
+                      className="h-full bg-primary shadow-[0_0_15px_rgba(155,135,245,0.8)]"
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
                     />
                   </div>
-                  <p className="text-sm text-primary font-medium">Subiendo documentos... {progress}%</p>
+                  <p className="text-[10px] text-muted-foreground animate-pulse leading-tight">
+                    Nuestro sistema de IA está analizando la validez de los documentos...
+                  </p>
                 </div>
               ) : (
-                <Button variant="neon" size="xl" className="w-full" onClick={handleUpload}>
-                  Subir Documentos Ahora
+                <Button variant="neon" size="xl" className="w-full h-14 rounded-2xl shadow-xl shadow-primary/20" onClick={handleUpload}>
+                  Enviar a Verificación
                 </Button>
               )}
             </div>
@@ -411,10 +435,10 @@ export function DriverDashboard() {
             >
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                    <Car className="w-6 h-6 text-primary-foreground" />
+                  <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
+                    <img src="/logo.png" alt="Rapicarm Logo" className="w-full h-full object-contain" />
                   </div>
-                  <span className="text-xl font-display font-bold">AntiGravity</span>
+                  <span className="text-xl font-display font-bold">Rapi<span className="text-primary neon-text">carm</span></span>
                 </div>
                 <button onClick={() => setSidebarOpen(false)}>
                   <X className="w-6 h-6" />
@@ -484,10 +508,10 @@ export function DriverDashboard() {
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
-            <Car className="w-6 h-6 text-primary neon-text" />
+          <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
+            <img src="/logo.png" alt="Rapicarm Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="font-display font-bold text-lg tracking-tight">Driver Hub</span>
+          <span className="font-display font-bold text-lg tracking-tight">Rapi<span className="text-primary neon-text">carm</span></span>
         </div>
 
         {/* Online Toggle */}

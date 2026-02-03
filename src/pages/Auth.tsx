@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Car, Mail, Lock, User, Eye, EyeOff, ArrowLeft, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +70,7 @@ export function Auth() {
           description: 'Has iniciado sesión correctamente.',
         });
       } else if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
@@ -84,10 +85,18 @@ export function Auth() {
 
         if (error) throw error;
 
-        toast({
-          title: '¡Cuenta creada!',
-          description: 'Revisa tu correo para confirmar tu cuenta.',
-        });
+        if (data.session) {
+          toast({
+            title: '¡Cuenta creada y conectada!',
+            description: 'Bienvenido a Rapicarm.',
+          });
+          // Navigation will be handled by the useEffect auth listener
+        } else {
+          toast({
+            title: '¡Cuenta creada!',
+            description: 'Por favor revisa tu correo para confirmar tu cuenta (Revisa SPAM si es necesario).',
+          });
+        }
       } else if (mode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(
           formData.email,
@@ -107,10 +116,12 @@ export function Auth() {
 
       if (message.includes('User already registered') || message.includes('already exists')) {
         message = 'Este correo ya está registrado. Intenta iniciar sesión o recuperar tu contraseña.';
+      } else if (message.includes('rate limit exceeded') || message.includes('Too many requests')) {
+        message = 'Has excedido el límite de intentos de registro. Por favor espera unos minutos o usa otro correo (Límite de Supabase).';
       }
 
       toast({
-        title: 'Error',
+        title: 'Error de Autenticación',
         description: message,
         variant: 'destructive',
       });
@@ -120,25 +131,31 @@ export function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex overflow-hidden">
+      {/* Background Decorative Blob */}
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
+
       {/* Left side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 z-10">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md"
         >
           {/* Back to home */}
-          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Volver al inicio
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-8 transition-colors group">
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Volver al inicio</span>
           </Link>
 
           {/* Logo */}
           <div className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center neon-glow">
-              <Car className="w-6 h-6 text-primary-foreground" />
+            <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/50">
+              <Car className="w-8 h-8 text-primary" />
             </div>
             <span className="text-2xl font-display font-bold">
-              Anti<span className="text-primary">Gravity</span>
+              Rapi<span className="text-primary neon-text">carm</span>
             </span>
           </div>
 
@@ -278,12 +295,38 @@ export function Auth() {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+52 123 456 7890"
+                    placeholder="+57 300 123 4567"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="pl-10 h-12 bg-secondary border-border"
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Driver Documents Upload (Motos/Carros) */}
+            {mode === 'signup' && selectedRole === 'driver' && (
+              <div className="space-y-4 pt-4 border-t border-border animate-in fade-in slide-in-from-top-2">
+                <h3 className="text-sm font-semibold text-primary">Documentos Requeridos</h3>
+
+                <div className="space-y-2">
+                  <Label htmlFor="license" className="text-xs">Licencia de Conducción</Label>
+                  <Input id="license" type="file" className="bg-secondary" accept="image/*,.pdf" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="propertyCard" className="text-xs">Tarjeta de Propiedad</Label>
+                  <Input id="propertyCard" type="file" className="bg-secondary" accept="image/*,.pdf" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="idCard" className="text-xs">Cédula de Ciudadanía</Label>
+                  <Input id="idCard" type="file" className="bg-secondary" accept="image/*,.pdf" />
+                </div>
+
+                <p className="text-[10px] text-muted-foreground">
+                  * Tus documentos pasarán por un proceso de verificación de 24h.
+                </p>
               </div>
             )}
 
@@ -349,14 +392,13 @@ export function Auth() {
               </button>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Right side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-gradient-mesh items-center justify-center p-12">
-        <div
-          className="max-w-lg text-center"
-        >
+      <div className="hidden lg:flex flex-1 bg-gradient-mesh items-center justify-center p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-primary/5" />
+        <div className="max-w-lg text-center relative z-10">
           <div className="w-24 h-24 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-8 neon-glow animate-float">
             <Car className="w-12 h-12 text-primary-foreground" />
           </div>
@@ -364,7 +406,7 @@ export function Auth() {
             La libertad de elegir tu precio
           </h2>
           <p className="text-muted-foreground text-lg">
-            Con AntiGravity, el poder está en tus manos.
+            Con Rapicarm, el poder está en tus manos.
             Negocia directamente con conductores y obtén el mejor precio para tu viaje.
           </p>
         </div>
