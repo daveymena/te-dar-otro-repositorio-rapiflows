@@ -119,7 +119,9 @@
   .neon-text {
     text-shadow:
       0 0 10px hsl(var(--neon-glow) / 0.8),
-      0 0 30px hsl(var(--neon-glow) / 0.5);
+      0 0 30px hsl(var(--neon-glow) / 0.5),
+      2px 2px 4px rgba(0, 0, 0, 0.5);
+    /* Added shadow for better contrast on images */
   }
 
   .neon-text-cyan {
@@ -258,7 +260,7 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
 html,
@@ -267,10 +269,18 @@ body,
   max-width: 100vw !important;
   overflow-x: hidden !important;
   position: relative;
-  width: 100%;
-  margin: 0;
-  padding: 0;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Force all buttons and inputs to respect container width */
+button,
+input,
+textarea,
+select {
+  max-width: 100% !important;
 }
 
 @layer base {

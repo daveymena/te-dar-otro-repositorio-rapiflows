@@ -96,12 +96,20 @@ export async function geocodeAddress(address: string): Promise<Coordinates | nul
 
 export async function reverseGeocode(coordinates: Coordinates): Promise<string | null> {
     try {
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates.lng},${coordinates.lat}.json?access_token=${MAPBOX_TOKEN}&limit=1`;
+        // Prioritize POI (Points of Interest), Neighborhoods, and specific Addresses
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates.lng},${coordinates.lat}.json?access_token=${MAPBOX_TOKEN}&types=poi,address,neighborhood,place&limit=3&language=es`;
 
         const response = await fetch(url);
         const data = await response.json();
 
         if (data.features && data.features.length > 0) {
+            // Priority:
+            // 1. POI (Mall, Residential Complex names)
+            // 2. Specific Address
+            // 3. Neighborhood/Locality
+            const poi = data.features.find((f: any) => f.place_type.includes('poi'));
+            if (poi) return poi.place_name;
+
             return data.features[0].place_name;
         }
 

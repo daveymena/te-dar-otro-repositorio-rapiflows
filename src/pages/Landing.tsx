@@ -37,19 +37,19 @@ const HERO_IMAGE_URL = "https://images.unsplash.com/photo-1503376780353-7e669276
 
 export function Landing() {
   return (
-    <div className="min-h-screen bg-background selection:bg-primary/30 overflow-x-hidden w-full">
+    <div className="min-h-screen bg-background selection:bg-primary/30 overflow-x-hidden w-full relative">
       {/* Hero Section */}
       <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden layout-fix">
-        {/* Background Image - Forced visible with higher z-index if needed */}
-        <div className="absolute inset-0 z-[-1]">
+        {/* Background Image - Forced visible with extreme contrast */}
+        <div className="absolute inset-0 z-[-1] overflow-hidden">
           <img
             src={HERO_IMAGE_URL}
             alt="Hero Background"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-center scale-105"
             loading="eager"
           />
-          <div className="absolute inset-0 bg-black/60" /> {/* Darker overlay for better contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/40" />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/60" />
         </div>
 
         {/* Decorative Background Elements */}

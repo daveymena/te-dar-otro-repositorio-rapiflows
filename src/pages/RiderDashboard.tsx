@@ -86,6 +86,7 @@ export function RiderDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasInitializedLocation, setHasInitializedLocation] = useState(false);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -118,9 +119,10 @@ export function RiderDashboard() {
 
   // Set origin from REAL geolocation automatically on load
   useEffect(() => {
-    if (latitude && longitude && !origin && !geoLoading) {
+    if (latitude && longitude && !origin && !geoLoading && !hasInitializedLocation) {
       const initLocation = async () => {
         try {
+          setHasInitializedLocation(true);
           // Import dynamic to avoid circular dependencies
           const { reverseGeocode } = await import('@/services/routingService');
           const realAddress = await reverseGeocode({ lat: latitude, lng: longitude });
@@ -147,7 +149,7 @@ export function RiderDashboard() {
 
       initLocation();
     }
-  }, [latitude, longitude, geoLoading, origin, setOrigin, setOriginInput]);
+  }, [latitude, longitude, geoLoading, origin, setOrigin, setOriginInput, hasInitializedLocation]);
 
   // Dynamic Place Search Effect
   useEffect(() => {
