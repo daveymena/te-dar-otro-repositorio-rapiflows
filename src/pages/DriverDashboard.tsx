@@ -554,32 +554,32 @@ export function DriverDashboard() {
       </header>
 
       {/* Stats Bar - Professional Earnings Overview */}
-      <div className="p-4 bg-background/50 backdrop-blur-md">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="glass-strong rounded-2xl p-4 border-b-4 border-primary shadow-xl flex flex-col items-center">
-            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-              <Wallet className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-tighter">Hoy</span>
+      <div className="p-3 sm:p-4 bg-background/50 backdrop-blur-md">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="glass-strong rounded-2xl p-3 sm:p-4 border-b-4 border-primary shadow-xl flex flex-col items-center">
+            <div className="flex items-center gap-1 text-muted-foreground mb-0.5 sm:mb-1">
+              <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-tighter">Hoy</span>
             </div>
-            <div className="text-xl font-display font-black text-primary">
+            <div className="text-lg sm:text-xl font-display font-black text-primary">
               ${todayEarnings.toLocaleString('es-CO')}
             </div>
           </div>
-          <div className="glass-strong rounded-2xl p-4 border-b-4 border-accent shadow-xl flex flex-col items-center">
-            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-              <Zap className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-tighter">Viajes</span>
+          <div className="glass-strong rounded-2xl p-3 sm:p-4 border-b-4 border-accent shadow-xl flex flex-col items-center">
+            <div className="flex items-center gap-1 text-muted-foreground mb-0.5 sm:mb-1">
+              <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-tighter">Viajes</span>
             </div>
-            <div className="text-xl font-display font-black text-accent">
+            <div className="text-lg sm:text-xl font-display font-black text-accent">
               {todayRides}
             </div>
           </div>
-          <div className="glass-strong rounded-2xl p-4 border-b-4 border-purple-500 shadow-xl flex flex-col items-center">
-            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-              <Clock3 className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-tighter">Online</span>
+          <div className="glass-strong rounded-2xl p-3 sm:p-4 border-b-4 border-purple-500 shadow-xl flex flex-col items-center">
+            <div className="flex items-center gap-1 text-muted-foreground mb-0.5 sm:mb-1">
+              <Clock3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-tighter">Online</span>
             </div>
-            <div className="text-xl font-display font-black text-purple-500">
+            <div className="text-lg sm:text-xl font-display font-black text-purple-500">
               {isOnline ? '03:45' : '00:00'}h
             </div>
           </div>
@@ -589,7 +589,7 @@ export function DriverDashboard() {
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         {activeRide ? (
-          <div className="h-full flex flex-col p-4 space-y-4 overflow-y-auto">
+          <div className="h-full flex flex-col p-4 space-y-4 overflow-y-auto safe-bottom">
             <div className="flex-1 min-h-[300px] rounded-2xl overflow-hidden glass border border-border">
               <MapComponent
                 origin={{ lat: activeRide.origin_lat, lng: activeRide.origin_lng, address: activeRide.origin_address || '' }}

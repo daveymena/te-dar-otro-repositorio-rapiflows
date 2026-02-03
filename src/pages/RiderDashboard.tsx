@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
   MapPin,
   Navigation,
@@ -349,14 +349,30 @@ export function RiderDashboard() {
   const handleSetDestination = useCallback(() => {
     if (!destinationInput) return;
 
-    // Mock geocoding - in real app, use Mapbox Geocoding API
-    setDestination({
-      lat: (origin?.lat || 19.4326) + (Math.random() - 0.5) * 0.1,
-      lng: (origin?.lng || -99.1332) + (Math.random() - 0.5) * 0.1,
-      address: destinationInput,
-    });
+    if (!destination) {
+      // If user typed but didn't pick from list, try to pick the first search result if available
+      if (searchResults.length > 0) {
+        const firstPlace = searchResults[0];
+        setDestination({
+          lat: firstPlace.lat,
+          lng: firstPlace.lng,
+          address: firstPlace.address
+        });
+        setDestinationInput(firstPlace.name);
+        setStep('price');
+        return;
+      }
+
+      toast({
+        title: "Selecciona una dirección específica",
+        description: "Para garantizar un viaje exacto, selecciona uno de los lugares de la lista.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setStep('price');
-  }, [destinationInput, origin, setDestination]);
+  }, [destinationInput, destination, searchResults, setDestination, setDestinationInput, toast]);
 
   const handleRequestRide = useCallback(async () => {
     if (!profile || !origin || !destination || offerPrice <= 0) return;
@@ -700,48 +716,51 @@ export function RiderDashboard() {
         {/* Bottom Panel - Android Style Bottom Sheet for Mobile */}
         {serviceType === 'ride' && (
           <motion.div
-            className="bg-card border-t border-border rounded-t-3xl p-4 sm:p-6 space-y-4 shadow-2xl relative z-20 max-h-[80vh] overflow-y-auto layout-fix"
-            layout
+            className="bg-card border-t border-border rounded-t-[2.5rem] p-5 sm:p-8 space-y-5 shadow-2xl relative z-20 max-h-[85vh] overflow-y-auto layout-fix safe-bottom"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
           >
-            {/* Visual Drag Indicator for Mobile */}
-            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-2 sm:hidden opacity-50" />
+            {/* Professional Drag Handle */}
+            <div className="w-16 h-1.5 bg-muted/40 rounded-full mx-auto mb-4 sm:hidden" />
 
             <AnimatePresence mode="wait">
               {/* Step 1: Location Input */}
               {step === 'location' && (
                 <motion.div
                   key="location"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
                 >
                   <h2 className="text-xl font-display font-bold">¿A dónde vamos?</h2>
 
                   {/* Professional Vehicle Categories Selector - Uber/Didi Style */}
                   <div className="flex flex-col gap-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Selecciona tu categoría</span>
-                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                    <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x -mx-5 px-5">
                       {[
-                        { id: 'economy', name: 'Ahorro', icon: Car, desc: 'Económico', price: 'x1.0' },
-                        { id: 'comfort', name: 'Comfort', icon: Shield, desc: 'Premium', price: 'x1.4' },
-                        { id: 'moto', name: 'Moto', icon: Bike, desc: 'Rápido', price: 'x0.6' },
-                        { id: 'delivery', name: 'Envío', icon: Package, desc: 'Paquetes', price: 'Fixed' },
+                        { id: 'economy', name: 'Ahorro', icon: Car, desc: 'Económico' },
+                        { id: 'comfort', name: 'Comfort', icon: Shield, desc: 'Premium' },
+                        { id: 'moto', name: 'Moto', icon: Bike, desc: 'Rápido' },
+                        { id: 'delivery', name: 'Envío', icon: Package, desc: 'Paquetes' },
                       ].map((type) => (
                         <button
                           key={type.id}
                           onClick={() => setVehicleType(type.id as any)}
-                          className={`flex-shrink-0 w-24 snap-start p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1.5 ${vehicleType === type.id
-                            ? 'border-primary bg-primary/10 shadow-lg'
-                            : 'border-border bg-card hover:border-muted-foreground/30'
+                          className={`flex-shrink-0 w-[100px] snap-center p-4 rounded-[1.5rem] border-2 transition-all flex flex-col items-center gap-2 ${vehicleType === type.id
+                            ? 'border-primary bg-primary/10 shadow-[0_8px_16px_rgba(255,100,0,0.15)]'
+                            : 'border-border bg-card'
                             }`}
                         >
-                          <div className={`p-2 rounded-xl ${vehicleType === type.id ? 'bg-primary text-black' : 'bg-secondary text-muted-foreground'}`}>
-                            <type.icon className="w-5 h-5" />
+                          <div className={`p-2.5 rounded-xl ${vehicleType === type.id ? 'bg-primary text-black' : 'bg-secondary text-muted-foreground'}`}>
+                            <type.icon className="w-6 h-6" />
                           </div>
                           <div className="text-center">
-                            <div className={`text-[11px] font-black uppercase ${vehicleType === type.id ? 'text-primary' : 'text-foreground'}`}>{type.name}</div>
-                            <div className="text-[9px] text-muted-foreground font-medium">{type.desc}</div>
+                            <div className={`text-[12px] font-black uppercase tracking-tight ${vehicleType === type.id ? 'text-primary' : 'text-foreground'}`}>{type.name}</div>
+                            <div className="text-[10px] text-muted-foreground font-semibold whitespace-nowrap">{type.desc}</div>
                           </div>
                         </button>
                       ))}
@@ -761,13 +780,16 @@ export function RiderDashboard() {
                     </div>
 
                     <div className="relative group">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-accent flex items-center justify-center">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-accent flex items-center justify-center z-10">
                         <div className="w-1.5 h-1.5 bg-accent rounded-full" />
                       </div>
                       <Input
                         value={destinationInput}
-                        onChange={(e) => setDestinationInput(e.target.value)}
-                        placeholder="¿A dónde vas?"
+                        onChange={(e) => {
+                          setDestinationInput(e.target.value);
+                          if (destination) setDestination(null); // Clear specific point if user re-types
+                        }}
+                        placeholder="¿A dónde vas? (ej: Mall Plaza)"
                         className="pl-10 h-14 bg-secondary/50 border-border rounded-xl text-base focus:ring-accent/50"
                       />
                       {/* Plus button for multiple stops */}
@@ -875,10 +897,11 @@ export function RiderDashboard() {
               {step === 'price' && (
                 <motion.div
                   key="price"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
                 >
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-display font-bold">Tu oferta</h2>

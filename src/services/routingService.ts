@@ -57,8 +57,9 @@ export async function getOptimizedRoute(
 export async function searchPlaces(query: string, proximity?: Coordinates): Promise<any[]> {
     try {
         const proximityQuery = proximity ? `&proximity=${proximity.lng},${proximity.lat}` : '';
-        // types=poi,address,neighborhood -> prioritizes Points of Interest (Malls, complexes, business)
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=8${proximityQuery}&types=poi,address,neighborhood,place,postcode&language=es`;
+        // Bounding Box for Cali area to prioritize local results (approx minLng,minLat,maxLng,maxLat)
+        const caliBbox = '-76.59,-3.33,-76.45,3.53';
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=8${proximityQuery}&country=co&bbox=${caliBbox}&types=poi,address,neighborhood,place,postcode&language=es`;
 
         const response = await fetch(url);
         const data = await response.json();

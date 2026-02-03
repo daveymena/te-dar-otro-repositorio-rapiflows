@@ -307,6 +307,10 @@ select {
     max-width: 100%;
     overflow-x: hidden;
   }
+
+  .safe-bottom {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important;
+  }
 }
 
 /* Responsive Overrides */
