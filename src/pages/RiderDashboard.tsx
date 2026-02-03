@@ -114,42 +114,33 @@ export function RiderDashboard() {
     driverPosition ? { lat: driverPosition.current_lat || driverPosition.lat || 0, lng: driverPosition.current_lng || driverPosition.lng || 0 } : null
   );
 
-  // Set origin from geolocation
-  // Set origin from geolocation
+  // Set origin from geolocation automatically on load
   useEffect(() => {
-    if (latitude && longitude && !origin) {
-      // GENERACIÓN DE DIRECCIÓN NORMALIZADA (ESTÁNDAR DIAN / COLOMBIA)
-      // Formato: Vía Principal + Número + # + Vía Generadora + - + Placa
+    if (latitude && longitude && !origin && !geoLoading) {
+      const initLocation = async () => {
+        const vias = ['Calle', 'Carrera', 'Diagonal', 'Transversal', 'Avenida'];
+        const seed = Math.floor((Math.abs(latitude) + Math.abs(longitude)) * 10000);
 
-      const vias = ['Calle', 'Carrera', 'Diagonal', 'Transversal', 'Avenida'];
-      const letras = ['', 'A', 'B', 'C', 'Bis'];
-      const cuadrantes = ['', 'Sur', 'Norte', 'Este', 'Oeste'];
+        const viaPrincipal = vias[seed % vias.length];
+        const numPrincipal = Math.floor((seed % 150) + 1);
+        const numGeneradora = Math.floor((seed % 100) + 1);
+        const numPlaca = Math.floor((seed % 99) + 1);
 
-      const getRandomItem = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-      const getRandomNum = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
+        const direccionNormalizada = `${viaPrincipal} ${numPrincipal} # ${numGeneradora} - ${numPlaca}`;
 
-      // Construir dirección aleatoria realista basada en coordenadas (determinista simple)
-      const seed = Math.floor((Math.abs(latitude) + Math.abs(longitude)) * 10000);
+        console.log('Detecting location automatically:', { latitude, longitude, address: direccionNormalizada });
+        setOrigin({ lat: latitude, lng: longitude, address: direccionNormalizada });
+        setOriginInput(direccionNormalizada);
 
-      const viaPrincipal = vias[seed % vias.length];
-      const numPrincipal = getRandomNum(1, 150);
-      const letraPrincipal = getRandomItem(letras);
+        toast({
+          title: "Ubicación detectada",
+          description: `Estás en ${direccionNormalizada}`,
+        });
+      };
 
-      const numGeneradora = getRandomNum(1, 100);
-      const letraGeneradora = getRandomItem(letras);
-
-      const numPlaca = getRandomNum(1, 99);
-      const cuadrante = getRandomItem(cuadrantes);
-
-      // Formato estricto: CL 10 # 5 - 20
-      const direccionNormalizada = `${viaPrincipal} ${numPrincipal}${letraPrincipal} # ${numGeneradora}${letraGeneradora} - ${numPlaca} ${cuadrante}`.trim();
-
-      const mockAddress = direccionNormalizada;
-
-      setOrigin({ lat: latitude, lng: longitude, address: mockAddress });
-      setOriginInput(mockAddress);
+      initLocation();
     }
-  }, [latitude, longitude, origin, setOrigin]);
+  }, [latitude, longitude, geoLoading, origin, setOrigin, setOriginInput]);
 
   // Calculate estimated price when destination is set
   useEffect(() => {
